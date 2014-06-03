@@ -1,12 +1,13 @@
-17026d3927c58bad6576f65cb06e39e8 *DESCRIPTION
+f44e009c1494f1c7630c349ab5a88c90 *DESCRIPTION
 f310e1a7027609f5da18b6c68a205649 *NAMESPACE
+9fa2a586b809c73e4f02a617532eaf61 *NEWS
 a335dddb647ffd851c7e05cdbffd1f6a *R/BICadj.R
 d800e80625507672477ca440e15981b7 *R/lms2z.R
 dd867e0bfece62ebf007e6e50bade33a *R/mplot.R
-c60ae55578c5701a9275ae8df4edad58 *R/plot.sitar.R
+359c7f38603b45a911f8b097363ccadd *R/plot.sitar.R
 a34ee98212d7ce8c6a87968ed0b0aede *R/plotclean.R
-57b36a80ae14031cea60b6ee4a141cc8 *R/sitar.R
-4cbe3631c150a3fc9945be263e1bb71b *R/sitarlib.R
+ff4fe52c33984e6ea8c0a6c9ef95f843 *R/sitar.R
+efbb63cba0f88bec2758a8805547cc4b *R/sitarlib.R
 10eb172a4e4ac436c7869d03d1b2ef4c *README.md
 c199ee5c549931f007076dbce6c20808 *data/heights.rda
 29730cef0791dd23f2ffb0d094b98c2d *data/uk90.rda
@@ -34,6 +35,6 @@ e7137be00817f9480b1d22df3ad96871 *man/sitar-package.Rd
 4a30435ea6ac5fbce6855f8597e958ab *man/ukwhopt.Rd
 1ae1202c175216ec7a217b3ed7ee3012 *man/velout.Rd
 48b02cf6bab5dd4e3f790ce3c3733b6f *man/who06.Rd
-36de96b31f11cdf387a7b40057cb5a07 *man/xaxsd.rd
+50d2b07421424ab6cdaca1c7506a7463 *man/xaxsd.rd
 fbdc4da141c77110f6cebfb8677d4983 *man/y2plot.Rd
 ae393049e269bd52d8064a65db6f2beb *man/z2cent.Rd
