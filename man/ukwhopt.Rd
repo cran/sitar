@@ -26,15 +26,15 @@ M and S by sex from 23 to 42 weeks gestation.
   }
 }
 \details{
-The growth reference is the birth section of the UK-WHO growth reference 
+The growth reference is the birth section of the UK-WHO growth reference
 (see Wright et al 2010).
 
-The L, M and S values for each measurement correspond respectively to the Box-Cox power, 
-median and coefficient of variation of the distribution by age and sex 
-(Cole & Green 1992). The short names for each measurement (see \code{\link{lms2z}}) 
+The L, M and S values for each measurement correspond respectively to the Box-Cox power,
+median and coefficient of variation of the distribution by age and sex
+(Cole & Green 1992). The short names for each measurement (see \code{\link{LMS2z}})
 are as follows: height (ht), weight (wt) and head circumference (head).
 
-Age is measured in \code{weeks} gestation and \code{years} post-term, 
+Age is measured in \code{weeks} gestation and \code{years} post-term,
 where 0 years corresponds to 40 weeks gestation.
 }
 \source{
@@ -50,13 +50,12 @@ Cole TJ, Williams AF, Wright CM, et al. Revised birth centiles for weight,
 length and head circumference in the UK-WHO growth charts. Ann Hum Biol
 2011;38:7-11.
 
-Wright CM, Williams AF, Elliman D, et al. Using the new UK-WHO growth charts.
-BMJ 2010;340:c1140.
+Wright CM, Williams AF, Elliman D, et al. Using the new UK-WHO growth charts. BMJ 2010;\-340:c1140.
 }
 \examples{
 data(ukwhopt)
 ## calculate median birth weight in girls from 23 to 42 weeks gestation
-lms2z(x = (23:42-40) * 7 / 365.25, y = 0, sex = 2, data = NULL, measure = 'wt', 
-    ref = 'ukwhopt', toz = FALSE)
+LMS2z(x = (23:42-40) * 7 / 365.25, y = 0, sex = 2, data = NULL,
+  measure = 'wt', ref = 'ukwhopt', toz = FALSE)
 }
 \keyword{datasets}
