@@ -3,7 +3,7 @@
 #	x and y can be name or character
 #	subset defines a subset of rows
 #	add TRUE suppresses plot axes
-#	... parameters where col, lty, lwd, pch can depend on id
+#	... parameters where bg, cex, col, lty, lwd, pch can depend on id
 
 #	save x y id
 	mcall <- match.call()[-1]
@@ -17,11 +17,9 @@
   	})
 	}
 
-#	extract and save vector par args: col lty lwd pch
-	cnames <- names(mcall)
-	dots <- !cnames %in% names(formals(mplot))
-	if (sum(dots) > 0) {
-		ARG <- lapply(as.list(mcall[dots]), eval, envir = data, enclos = parent.frame())
+#	extract and save vector par args: bg cex col lty lwd pch
+	if (length(dots <- match.call(expand.dots=FALSE)$...) > 0) {
+		ARG <- lapply(as.list(dots), eval, envir = data, enclos = parent.frame())
 		cnames <- names(ARG)[lapply(ARG, length) == nrow(df)]
 		df[, cnames] <- ARG[cnames]
 		ARG[cnames] <- NULL
