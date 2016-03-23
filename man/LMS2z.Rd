@@ -5,7 +5,7 @@
 A function to convert between measurements and z-scores using a growth reference
 previously fitted by the LMS method.}
 \usage{
-LMS2z(x, y, sex, data = parent.frame(), measure, ref, toz = TRUE)
+LMS2z(x, y, sex, measure, ref, toz = TRUE)
 }
 \arguments{
   \item{x}{
@@ -13,9 +13,7 @@ vector of ages.}
   \item{y}{
 vector of either measurements or z-scores, depending on the value of \code{toz}.}
   \item{sex}{
-two-level factor with level 1 male and level 2 female.}
-  \item{data}{
-optional data frame containing \code{x}, \code{y} and \code{sex}.}
+two-level factor with level 1 male and level 2 female, of length one or \code{length(x)}.}
   \item{measure}{
 character indicating the name of the measurement, depending on the choice of
 \code{ref} (see e.g. references \code{uk90}, \code{who06} and \code{ukwhopt}).}
@@ -27,7 +25,7 @@ logical set to TRUE for conversion from measurement to z-score, or FALSE for the
 \details{
 Vectors of L, M and S corresponding to \code{x} and \code{sex} are extracted and
 passed to either \code{\link{cLMS}} or \code{\link{zLMS}}, depending on \code{toz}.}
-\value{A vector of the same length as \code{y} containing the transformed values.}
+\value{A vector or matrix, depending on the lengths of \code{x} and \code{y}, containing the transformed values. If the two lengths are the same, or either is one, then a vector is returned. If they are different and not one, then a matrix with \code{length(x)} rows and \code{length(y)} columns is returned. In this latter case the row names are set to \code{x}, and if \code{toz} is false the column names are set using \code{z2cent}.}
 \author{Tim Cole \email{tim.cole@ucl.ac.uk}}
 \seealso{\code{\link{z2cent}}. The LMS method can be fitted to data using the package
   \code{gamlss} with the \code{BCCG} family, where nu (originally lambda), mu and sigma
@@ -36,7 +34,7 @@ passed to either \code{\link{cLMS}} or \code{\link{zLMS}}, depending on \code{to
 ## convert girls' heights data to UK 90 z-scores
 data(heights)
 data(uk90)
-LMS2z(age, height, sex = 2, heights, measure = 'ht', ref = 'uk90')
+with(heights, LMS2z(age, height, sex = 2, measure = 'ht', ref = 'uk90'))
 
 ## construct table of boys weight centiles by age for WHO standard
 data(who06)

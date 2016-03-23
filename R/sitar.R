@@ -48,10 +48,10 @@
 		mcall$xoffset <- NULL
 		if (b.formula == as.formula('~ -1') || b.formula == as.formula('~ 1-1') || !grepl('b', fixed)) bstart <- 0
 		else bstart <- b.origin(bstart)
-		knots <- knots - bstart
-		bounds <- bounds - bstart
+		knots <- knots - mean(x)
+		bounds <- bounds - mean(x)
 #	get spline start values
-		spline.lm <- lm(y ~ ns(x - bstart, knots=knots, Bound=bounds))
+		spline.lm <- lm(y ~ ns(x - mean(x), knots=knots, Bound=bounds))
 	}
 	else { # using xoffset
 		xoffset <- b.origin(xoffset)
@@ -131,17 +131,17 @@
 		}
 	}
 
-	if (!is.null(weights)) {
-    if (is.list(weights)) form <- asOneFormula(lapply(weights, function(z) attr(z, 'formula')))
-      else form <- attr(weights, 'formula')
-    if (!is.null(form)) {
-      wt <- as.data.frame(model.frame(form, data))
-      wt.names <- names(wt)[!names(wt) %in% names(fulldata)]
-      wt <- as.data.frame(wt[, wt.names])
-      names(wt) <- wt.names
-      fulldata <- cbind(fulldata, wt)
-	  }
-	}
+# 	if (!is.null(weights)) {
+#     if (is.list(weights)) form <- asOneFormula(lapply(weights, function(z) attr(z, 'formula')))
+#       else form <- attr(weights, 'formula')
+#     if (!is.null(form)) {
+#       wt <- as.data.frame(model.frame(form, data))
+#       wt.names <- names(wt)[!names(wt) %in% names(fulldata)]
+#       wt <- as.data.frame(wt[, wt.names])
+#       names(wt) <- wt.names
+#       fulldata <- cbind(fulldata, wt)
+# 	  }
+# 	}
 
 	if (returndata) invisible(fulldata) else {
 		pars <- paste(pars, collapse=',')
