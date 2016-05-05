@@ -23,8 +23,8 @@
 #
 #		subset is subset of values
 #
-#		abc is a set of named sitar parameters for opt dv e.g.
-#			abc=list(a=1, b=0.1, c=-0.1)
+#		abc is a vector of named sitar parameters for opt dv e.g.
+#			abc=c(a=1, b=0.1, c=-0.1)
 #		or a single id level whose abc values are to be used
 #
 #		add TRUE overwrites previous graph (or use lines)
@@ -124,7 +124,7 @@
 
 #	plot fitted curves by subject
 		if (grepl("D", opt)) {
-		  newdata=stackage(x, id)
+		  newdata=stackage(x[subset], id[subset])
 		  newdata <- cbind(newdata, y=predict(model, newdata=newdata, xfun=xfun, yfun=yfun))
 		  do.call("mplot", c(list(x=xfun(newdata[, 1]), y=newdata[, 3], id=newdata[, 2],
 		                          data=newdata, add=add), ARG))
@@ -133,7 +133,7 @@
 
 #	plot fitted velocity curves by subject
 		if (grepl("V", opt)) {
-		  newdata=stackage(x, id)
+		  newdata=stackage(x[subset], id[subset])
 		  newdata <- cbind(newdata, y=predict(model, newdata=newdata, deriv=1, xfun=xfun, yfun=yfun))
 		  ARG$ylab <- labels[3]
 		  do.call("mplot", c(list(x=xfun(newdata[, 1]), y=newdata[, 3], id=newdata[, 2],
@@ -145,37 +145,22 @@
 		if (grepl("d", opt) || grepl("v", opt) || apv) {
 			xt <- xseq(x[subset])
   		newdata <- data.frame(x=xt)
-# if subset, estimate mean values for covariates
-      if (!identical(subset, rep(TRUE, nf))) {
-# check if old-style object lacking fitnlme
-        if(!'fitnlme' %in% names(model)) {
-          cat('need to update object to obtain fitnlme\n')
-          model <- update(model, control=nlmeControl(maxIter=0, pnlsMaxIter=0, msMaxIter=0))
-        }
-        argnames <- names(formals(model$fitnlme))
-        xtra <- argnames[!argnames %in% c('x', names(fixef(model)))]
-        if (length(xtra) > 0) {
-          df <- setNames(as.data.frame(update(model, returndata = TRUE)[subset, xtra]), xtra)
-          xtra <- unlist(lapply(df, mean, na.rm=TRUE))
-     			newdata <- data.frame(newdata, t(xtra))
-        }
-     }
+# if subset, flag for predict
+      if (!identical(subset, rep(TRUE, nf))) attr(newdata, 'subset') <- subset
 
 #	adjust for abc
 			if (!is.null(abc)) {
-#	if abc is named convert to data frame
-				if (!is.null(names(abc))) {
-					abc <- data.frame(t(abc))
-				}
-				else
-#	else abc is id level
+#	abc is id level
 				if (length(abc) == 1) {
 					idabc <- rownames(ranef(model)) %in% abc
 					if (sum(idabc) == 0) stop(paste('id', abc, 'not found'))
 					abc <- ranef(model)[idabc, ]
 				}
-				else stop('abc should be either single id level or up to three named random effect values')
+#	abc is named vector
+			  else if (length(abc) > 3 || is.null(names(abc)))
+			    stop('abc should be either single id level or up to three named random effect values')
 			}
+  		else abc <- ranef(model)
 
 			yt <- yfun(predict(object=model, newdata=newdata, level=0, abc=abc))
 			vt <- predict(object=model, newdata=newdata, level=0, deriv=1, abc=abc, xfun=xfun, yfun=yfun)
