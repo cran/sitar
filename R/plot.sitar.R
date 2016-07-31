@@ -1,36 +1,96 @@
-	plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, subset=NULL,
-	                       abc=NULL, add=FALSE, nlme=FALSE, ...)
-{
-#	plot curves from sitar model
-#	opt:
-#		d = fitted distance curve (labels[1] = x, labels[2] = y)
-#		v = fitted velocity curve (labels[3] = y)
-#		e = fitted fixed effects distance curve (labels[1] = x, labels[2] = y)
-#		D = fitted distance curves by subject
-#		V = fitted velocity curves by subject
-#		u = unadjusted y vs t curves by subject
-#		a = adjusted y vs adjusted t curves by subject
-#
-#		multiple options all plot on same graph
-#
-#		labels are for opt dv - particularly v
-#		or use xlab and ylab and y2par
-#
-#		apv TRUE draws vertical line at age of peak velocity
-#		and returns apv/pv (respecting xfun/yfun settings)
-#
-#		xfun/yfun are functions to apply to x/y before plotting
-#
-#		subset is subset of values
-#
-#		abc is a vector of named sitar parameters for opt dv e.g.
-#			abc=c(a=1, b=0.1, c=-0.1)
-#		or a single id level whose abc values are to be used
-#
-#		add TRUE overwrites previous graph (or use lines)
-#
-#		nlme TRUE plots model as nlme object
-
+#' Plot SITAR model
+#'
+#' \code{plot} and \code{lines} methods for objects of class \code{sitar},
+#' providing various flavours of plot of the fitted growth curves.
+#'
+#' For option 'dv' (the default) the velocity curve plot (with right axis) can
+#' be annotated with \code{par} parameters given as a named list called
+#' \code{y2par}. To suppress the legend that comes with it set \code{xlegend =
+#' NULL}.
+#'
+#' @aliases plot.sitar lines.sitar
+#' @param x object of class \code{sitar}.
+#' @param opt character string containing a subset of letters corresponding to
+#' the options: 'd' for fitted Distance curve, 'v' for fitted Velocity curve,
+#' 'e' for fitted fixed Effects distance curve, 'D' for individual fitted
+#' Distance curves, 'V' for individual fitted Velocity curves, 'u' for
+#' Unadjusted individual growth curves, and 'a' for Adjusted individual growth
+#' curves. Options 'dveDV' give spline curves, while 'ua' give data curves made
+#' up as line segments. If both distance and velocity curves are specified, the
+#' axis for the velocity curve appears on the right side of the plot (y2), and
+#' a legend identifying the distance and velocity curves is provided.
+#' @param labels optional character vector containing plot labels for \code{x},
+#' \code{y} and \code{y} velocity from the original SITAR model. The first two
+#' elements can alternatively be provided via \code{\link{par}} parameters
+#' \code{xlab} and \code{ylab}, and the third element via \code{y2par} (see
+#' Details). Default labels are the names of \code{x} and \code{y}, and
+#' "\code{y} velocity", suitably adjusted to reflect any back-transformation
+#' via \code{xfun} and \code{yfun}.
+#' @param apv optional logical specifying whether or not to calculate the age
+#' at peak velocity from the velocity curve. If TRUE, age at peak velocity is
+#' calculated as the age when the second derivative of the fitted curve changes
+#' sign (after applying \code{xfun} and/or \code{yfun}). Age at peak velocity
+#' is marked in the plot with a vertical dotted line, and its value, along with
+#' peak velocity, is printed and returned.
+#' @param xfun optional function to be applied to the x variable prior to
+#' plotting. Defaults to NULL, which translates to \code{ifun(x$call.sitar$x)}
+#' and inverts any transformation applied to x in the original SITAR model
+#' call. To plot on the transformed scale set \code{xfun} to \code{I}.
+#' @param yfun optional function to be applied to the y variable prior to
+#' plotting. Defaults to NULL, which translates to \code{ifun(x$call.sitar$y)}
+#' and inverts any transformation applied to y in the original SITAR model
+#' call. To plot on the transformed scale set \code{yfun} to \code{I}.
+#' @param subset optional logical vector of length \code{x} defining a subset
+#' of \code{data} rows to be plotted.
+#' @param abc vector of named values of random effects a, b and c used to
+#' define an individual growth curve, e.g. abc=c(a=1, c=-0.1). Alternatively a
+#' single character string defining an \code{id} level whose random effect
+#' values are used. If \code{abc} is set, \code{level} is ignored. If
+#' \code{abc} is NULL (default), or if a, b or c values are missing, values of
+#' zero are assumed.
+#' @param add optional logical defining if the plot is pre-existing (TRUE) or
+#' new (FALSE). TRUE is equivalent to using \code{lines}.
+#' @param nlme optional logical which set TRUE plots the model as an
+#' \code{nlme} object, using \code{plot.nlme} arguments.
+#' @param \dots Further graphical parameters (see \code{par}) may also be
+#' supplied as arguments, e.g. axis labels \code{xlab} and \code{ylab}, line
+#' type \code{lty}, line width \code{lwd}, and color \code{col}. For the
+#' velocity (y2) plot \code{y2par} can be used (see Details).
+#' @return Returns invisibly a list of three objects:
+#' \item{ss}{\code{smooth.spline} object corresponding to the fitted distance
+#' curve.} \item{usr}{value of \code{par('usr')} for the main plot.}
+#' \item{usr2}{the value of \code{par('usr')} for the velocity (y2) plot.}
+#' \item{apv}{if argument \code{apv} is TRUE a named list giving the age at
+#' peak velocity (apv) and peak velocity (pv) from the fitted velocity curve.}
+#' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
+#' @seealso \code{\link{mplot}},
+#' \code{\link{plotclean}}, \code{\link{y2plot}}, \code{\link{ifun}}
+#' @keywords aplot
+#' @examples
+#'
+#' ## fit sitar model
+#' m1 <- sitar(x=age, y=height, id=id, data=heights, df=7)
+#'
+#' ## draw fitted distance and velocity curves
+#' ## with velocity curve in blue
+#' ## adding age at peak velocity
+#' plot(m1, y2par=list(col='blue'), apv=TRUE)
+#'
+#' ## draw individually coloured growth curves adjusted for random effects
+#' ## using same x-axis limits as for previous plot
+#' plot(m1, opt='a', col=id, xlim=xaxsd())
+#'
+#' ## add mean curve in red
+#' lines(m1, opt='d', col='red', lwd=2)
+#'
+#' ## add mean curve for a, b, c = -1 SD
+#' lines(m1, opt='d', lwd=2, abc=-sqrt(diag(getVarCov(m1))))
+#'
+#' @importFrom grDevices xy.coords
+#' @importFrom graphics axis identify legend lines locator par text title
+#' @export
+plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, subset=NULL,
+	                       abc=NULL, add=FALSE, nlme=FALSE, ...) {
 	if (nlme) {
 	  do.call('plot.lme', as.list(match.call()[-1]))
 	}
@@ -61,40 +121,50 @@
 #	extract list(...)
 		ccall <- match.call()[-1]
 #	subset to plot model
-		subset <- eval(ccall$subset, data, parent.frame())
-		if (is.null(subset)) subset <- rep(TRUE, nf)
+		subset <- if (is.null(subset))
+		  rep_len(TRUE, nf)
+		else
+		  eval(ccall$subset, data, parent.frame())
+# ... args
 		dots <- match.call(expand.dots=FALSE)$...
-		if (length(dots) > 0) ARG <- lapply(as.list(dots), eval, data, parent.frame())
-			else ARG <- NULL
+		ARG <- if(!is.null(dots))
+		  lapply(as.list(dots), eval, data, parent.frame())
+		else
+		  NULL
 #	if xlab not specified replace with label or x name (depending on xfun)
-		if (!"xlab" %in% names(ARG)) {
-		  if(!missing(labels)) xl <- labels[1] else {
-		    if(!is.null(xfun)) xl <- paste0('(', deparse(substitute(xfun)), ')(', deparse(mcall$x), ")") else
-		      xl <- ifun(mcall$x)$varname
+		if (is.null(ARG$xlab)) {
+		  ARG$xlab <- if(!missing(labels))
+		    labels[1]
+		  else {
+		    if(!is.null(xfun))
+		      paste0('(', deparse(substitute(xfun)), ')(', deparse(mcall$x), ")")
+		    else
+		      ifun(mcall$x)$varname
 		  }
-			ARG <- c(ARG, list(xlab=xl))
 		}
-		else xl <- ARG$xlab
-#	if ylab not specified replace with label or else y name (depending on yfun)
-		if (!"ylab" %in% names(ARG)) {
-		  if(!missing(labels)) yl <- labels[2] else {
-		    if(!is.null(yfun)) yl <- paste0('(', deparse(substitute(yfun)), ')(', deparse(mcall$y), ")") else
-		      yl <- ifun(mcall$y)$varname
+#	if ylab not specified replace with label or y name (depending on yfun)
+		if (is.null(ARG$ylab)) {
+		  ARG$ylab <- if(!missing(labels))
+		    labels[2]
+		  else {
+		    if(!is.null(yfun))
+		      paste0('(', deparse(substitute(yfun)), ')(', deparse(mcall$y), ")")
+		    else
+		      ifun(mcall$y)$varname
 		  }
-			ARG <- c(ARG, list(ylab=yl))
 		}
-		else yl <- ARG$ylab
 # if labels not specified create it
-		if (missing(labels)) labels <- c(xl, yl, paste(yl, 'velocity'))
-		# if (missing(labels)) labels <- c(xl, yl, ifelse(typeof(yl) == 'expression',
-		#   expression(paste(as.character(yl), '~~velocity')), paste(yl, 'velocity')))
+		if (missing(labels))
+		  labels <- c(ARG$xlab, ARG$ylab, paste(ARG$ylab, 'velocity'))
 
 #	create output list
 		xy <- list()
 
 # derive xfun and yfun
-		if (is.null(xfun)) xfun <- ifun(mcall$x)$fn
-		if (is.null(yfun)) yfun <- ifun(mcall$y)$fn
+		if (is.null(xfun))
+		  xfun <- ifun(mcall$x)$fn
+		if (is.null(yfun))
+		  yfun <- ifun(mcall$y)$fn
 
 #	plot y vs t by subject
 		if (grepl("u", opt)) {
@@ -213,3 +283,19 @@
 		invisible(xy)
 	}
 }
+#############################
+#
+#	lines.sitar
+#
+#############################
+
+#' @rdname plot.sitar
+#' @export
+lines.sitar <- function (x, ...)
+{
+  mcall <- match.call()
+  mcall[[1]] <- as.name("plot")
+  mcall[['add']] <- TRUE
+  eval(mcall, parent.frame())
+}
+
