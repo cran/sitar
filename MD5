@@ -1,7 +1,7 @@
-72d05a9f58454ab007288f6a8804f332 *DESCRIPTION
-714c2fd23403d5adf824c90cd321386c *NAMESPACE
-06c74dd383f9d7b04e51fa03ffef5f98 *NEWS
-f817fb1d156ef1c9d2123ff66f6a1ea3 *R/BICadj.R
+0ebd5678928229146eed7aa5bef45f6d *DESCRIPTION
+c077b9967e9f031d608382d6964d9cda *NAMESPACE
+1d517316ac8b3cc1a5ff2fadc49c2545 *NEWS
+1d14cd2afb7d90f0d7f700898899651a *R/BICadj.R
 ec3bab02278c9899a4eb2fc03b166483 *R/LMS2z.R
 f0d5361803d951832b7e3d396b1cdc20 *R/LMSfit.R
 627c35b4e59b77d9a42bf36504d15055 *R/anova.sitar.R
@@ -9,12 +9,13 @@ e564d02cd8cc48ab6bd19989d8878f0c *R/getData.sitar.R
 ddf5a2b4ac510b423dc77f501a706fc9 *R/heights.R
 b79fa2637cabd5eba12610fe6489135a *R/ifun.R
 e3ba462c0b6e65b222a4e4c4e545961c *R/mplot.R
-5a90621c66502281a4d2b98e534f9a1c *R/plot.sitar.R
+110be91aabbc61b205e3f54a97de735e *R/plot.sitar.R
 6e5828a0e0a06ddbd0b7ad6c67047500 *R/plotclean.R
 cda430b523c41ca46e54f2bcd1b9963b *R/predict.sitar.R
 d551306bb6ae1f82a8c2ec347236d326 *R/sitar-package.R
-116d9950b8032d64591a51cadecbde2e *R/sitar.R
-a8a809d96cc48dc6101f325dc3500b54 *R/sitarlib.R
+1b16e613c5900d423a0a4632ec443f95 *R/sitar.R
+a763507c4a33cdae538f38389fead94d *R/sitarlib.R
+4eacda8dee9d60c639d0fa123be9dae6 *R/timegap.R
 5817743d92bf180043edb984488ddf4b *R/uk90.R
 1552e2bfe2573260231809f0e8f137ea *R/ukwhopt.R
 df3c5d07628b8f60d177c3cc68de443f *R/who06.R
@@ -37,7 +38,7 @@ e9ba8a6e8886d3df62d0206fdef724c9 *man/funcall.Rd
 6896f743617614f311b824115f2de10f *man/ifun.Rd
 e73ed7f74b227aa7cf963c2aa548e2c3 *man/makess.Rd
 767400c2f69ad3d49bd3c383abddff48 *man/mplot.Rd
-668b33afa84b119425a27103a841929d *man/plot.sitar.Rd
+02d863b9b9cc55583ddd3391924914fb *man/plot.sitar.Rd
 12b3d37c3dc4efc768b07d4a1e3f756f *man/plotclean.Rd
 fa4824dbdc2d445670e833ec9b91f596 *man/predict.sitar.Rd
 bf39739f03bb359d81a9ff07d66ecd19 *man/print.sitar.Rd
@@ -47,6 +48,7 @@ bf39739f03bb359d81a9ff07d66ecd19 *man/print.sitar.Rd
 6e8e7f4f71de3868b64f40c4d56b6c1a *man/sitar.Rd
 d5e897bc31ed72a1df01449d074e51a3 *man/subsample.Rd
 8f608f901770d364afbd2f0aa4a4f817 *man/summary.sitar.Rd
+e36286b080ac69d3b9c21a7afad7ffaa *man/timegap.Rd
 ce9faee217ddcad0fb96b1d1fc95527c *man/uk90.Rd
 b815982d09192ac3c2ad2c76a15aacf3 *man/ukwhopt.Rd
 80dbebfb5a06b0fc1650eb475c825684 *man/velout.Rd
