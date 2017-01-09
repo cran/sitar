@@ -144,7 +144,7 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 		    if(!is.null(xfun))
 		      paste0('(', deparse(substitute(xfun)), ')(', deparse(mcall$x), ")")
 		    else
-		      ifun(mcall$x)$varname
+		      attr(ifun(mcall$x), 'varname')
 		  }
 		}
 #	if ylab not specified replace with label or y name (depending on yfun)
@@ -155,7 +155,7 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 		    if(!is.null(yfun))
 		      paste0('(', deparse(substitute(yfun)), ')(', deparse(mcall$y), ")")
 		    else
-		      ifun(mcall$y)$varname
+		      attr(ifun(mcall$y), 'varname')
 		  }
 		}
 # if labels not specified create it
@@ -167,9 +167,9 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 
 # derive xfun and yfun
 		if (is.null(xfun))
-		  xfun <- ifun(mcall$x)$fn
+		  xfun <- ifun(mcall$x)
 		if (is.null(yfun))
-		  yfun <- ifun(mcall$y)$fn
+		  yfun <- ifun(mcall$y)
 
 #	plot y vs t by subject
 		if (grepl("u", opt)) {
@@ -197,23 +197,24 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 		  df
 		}
 
-#	plot fitted curves by subject
-		if (grepl("D", opt)) {
-		  newdata=stackage(x[subset], id[subset])
-		  newdata <- cbind(newdata, y=predict(model, newdata=newdata, xfun=xfun, yfun=yfun))
-		  do.call("mplot", c(list(x=xfun(newdata[, 1]), y=newdata[, 3], id=newdata[, 2],
-		                          data=newdata, add=add), ARG))
-		  add <- TRUE
-		}
-
-#	plot fitted velocity curves by subject
-		if (grepl("V", opt)) {
-		  newdata=stackage(x[subset], id[subset])
-		  newdata <- cbind(newdata, y=predict(model, newdata=newdata, deriv=1, xfun=xfun, yfun=yfun))
-		  ARG$ylab <- labels[3]
-		  do.call("mplot", c(list(x=xfun(newdata[, 1]), y=newdata[, 3], id=newdata[, 2],
-                              data=newdata, add=add), ARG))
-      add <- TRUE
+#	plot fitted distance or velocity curves by subject
+		for (o in c('D', 'V')) {
+		  oV <- as.numeric(o == 'V')
+  		if (grepl(o, opt)) {
+  		  newdata <- stackage(x[subset], id[subset])
+  		  newdata <- cbind(newdata, y=predict(model, newdata=newdata, xfun=xfun, yfun=yfun, deriv=oV))
+  		  ARG$ylab <- labels[2 + oV]
+# adjust ARG=id to ARG=newid
+  		  for (i in 1:length(ARG)) {
+  		    arg <- ARG[[i]]
+  		    if (length(arg) == length(id) &&
+  		      length(lvl <- unlist(tapply(id, arg, unique))) == nlevels(id))
+  		        ARG[[i]] <- lvl[newdata[, 2]]
+  		  }
+  		  do.call("mplot", c(list(x=xfun(newdata[, 1]), y=newdata[, 3], id=newdata[, 2],
+  		                          data=newdata, add=add), ARG))
+  		  add <- TRUE
+  		}
 		}
 
 #	plot fitted distance and velocity curves
@@ -269,7 +270,7 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 
 #	plot adjusted y vs adjusted t by subject
 		if (grepl("a", opt)) {
-			yt <- xyadj(x, y, id, model)
+			yt <- xyadj(model)
 			xt <- yt$x
 			yt <- yt$y
     	do.call("mplot", c(list(x=xfun(xt), y=yfun(yt), id=id, subset=subset, add=add), ARG))

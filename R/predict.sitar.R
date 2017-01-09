@@ -70,8 +70,10 @@
     }
     newdata$x <- newdata$x - xoffset
 # create id in newdata
-    if (any(level == 1)) newdata$id <- eval(oc$id, newdata)
-    else newdata$id <- rep.int(getGroups(object)[1], nrow(newdata))
+    if (is.null(newdata$id)) {
+      if (any(level == 1)) newdata$id <- eval(oc$id, newdata)
+      else newdata$id <- rep.int(getGroups(object)[1], nrow(newdata))
+    }
     id <- newdata$id <- factor(newdata$id)
 # check abc
     if (abcset <- !is.data.frame(abc)) {
@@ -139,11 +141,12 @@
     else { # deriv != 0 || abcset
 # mean distance curve
       pred <- predict(object=object, newdata=newdata, level=0, ...)
+# x changed to reflect individual b and c
+      xout <- xyadj(object=object, x=x, id=id, abc=abc)$x
 # DISTANCE
       if (deriv == 0) { # abcset
-# level 1 prediction based on x changed to reflect individual b and c
-        pred <- spline(list(x=x, y=pred), method='natural',
-                      xout=xyadj(x=x, id=id, object=object, abc=abc)$x)$y
+# level 1 prediction
+        pred <- spline(list(x=x, y=pred), method='natural', xout=xout)$y
 # add individual a to prediction (inexact when yfun != y)
         if (!is.null(abc$a)) pred <- yfun(pred + abc$a)
       }
@@ -153,9 +156,8 @@
         vel0 <- predict(makess(x, pred, xfun=xfun, yfun=yfun), xfun(x), deriv=deriv)
         if (any(level == 0) && !abcset) pred0 <- pred <- vel0$y
         if (any(level == 1) || abcset) {
-# level 1 prediction based on x changed to reflect individual b and c
-          pred <- spline(vel0, method='natural',
-                         xout=xfun(xyadj(x=x, id=id, object=object, abc=abc)$x))$y
+# level 1 prediction
+          pred <- spline(vel0, method='natural', xout=xfun(xout))$y
 # multiply velocity by individual c (inexact when xfun != x)
           if (!is.null(abc$c)) pred <- pred * exp(abc$c)
         }
