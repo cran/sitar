@@ -27,7 +27,7 @@
 #' @param id factor of subject identifiers.
 #' @param data data frame containing variables \code{x}, \code{y} and
 #' \code{id}.
-#' @param df degrees of freedom for cubic regression spline.
+#' @param df degrees of freedom for cubic regression spline (2 or more).
 #' @param knots vector of values for knots (default \code{df} quantiles of
 #' \code{x} distribution).
 #' @param fixed character string specifying a, b, c fixed effects (default
@@ -105,7 +105,7 @@
 #' amen <- abs(heights$men)
 #' (m2 <- update(m1, a.form=~amen, b.form=~amen, c.form=~amen))
 #' @import nlme splines
-#' @importFrom stats AIC BIC as.formula as.ts coef cor fitted lag lm logLik
+#' @importFrom stats AIC BIC as.formula coef cor fitted lag lm logLik
 #' mad model.frame model.matrix na.fail na.omit pnorm predict qnorm quantile
 #' residuals sd setNames smooth.spline spline update update.formula
 #' @export sitar
@@ -118,7 +118,7 @@
 		if (b == 'mean') return(mean(x))
 		if (b == 'apv') {
 			spline.lm <- lm(y ~ ns(x, knots=knots, Bound=bounds))
-			return(makess(x, fitted(spline.lm))$apv[1])
+			return(getPeakTrough(x, predict(smooth.spline(x, fitted(spline.lm)), x, deriv=1)$y)[1])
 		}
 		if (!is.numeric(b)) stop('must be "mean" or "apv" or numeric')
 		b
@@ -132,20 +132,25 @@
 	  data <- data[subset, ]
 	x <- eval(mcall$x, data)
 	y <- eval(mcall$y, data)
-	xoffset <- b.origin(xoffset)
-	x <- x - xoffset
 
 # get df, knots and bounds
 	if (missing(df) & missing(knots)) stop("either df or knots must be specified")
 	if (!missing(df) & !missing(knots)) cat("both df and knots specified - df redefined from knots\n")
-	if (missing(knots)) knots <- quantile(x, (1:(df-1))/df) else {
-	  knots <- knots - xoffset
+	if (missing(knots)) {
+	  if (df < 2) stop("df must be 2 or more")
+	  knots <- quantile(x, (1:(df-1))/df)
+	} else {
 	  df <- length(knots) + 1
 	}
 	if (nrow(data) <= df) stop("too few data to fit spline curve")
 	if (length(bounds) == 1) bounds <- range(x) + abs(bounds) * c(-1,1) * diff(range(x))
-	else if (length(bounds) == 2) bounds <- bounds - xoffset
-	else stop("bounds should be length 1 or 2")
+	else if (length(bounds) != 2) stop("bounds should be length 1 or 2")
+
+	xoffset <- b.origin(xoffset)
+	bstart <- b.origin(bstart) - xoffset
+	x <- x - xoffset
+	knots <- knots - xoffset
+	bounds <- bounds - xoffset
 
 # get spline start values
   spline.lm <- lm(y ~ ns(x, knots=knots, Bound=bounds))
@@ -191,6 +196,8 @@
 					stop('Missing values in data')
 				mm.formula <- formula
 				mm.intercept <- colnames(mm)[1] == '(Intercept)'
+# ensure names are valid
+      	colnames(mm) <- make.names(colnames(mm), unique=TRUE)
 # omit constant columns
 				mm <- mm[, apply(mm, 2, function(x) max(x) > min(x)), drop=FALSE]
 # centre columns
@@ -212,13 +219,11 @@
 		if (mm.intercept) {
 			fixed <- c(fixed, l)
 			if (nostart) {
-			  if (l == 'b') start <- c(start, b.origin(bstart) - xoffset)
+			  if (l == 'b') start <- c(start, bstart)
 			    else if (l == 'c') start <- c(start, 0)
 			}
 		}
 	}
-# ensure names are valid
-	names(fulldata) <- make.names(names(fulldata), unique=TRUE)
 
 # 	if (!is.null(weights)) {
 #     if (is.list(weights)) form <- asOneFormula(lapply(weights, function(z) attr(z, 'formula')))
@@ -350,7 +355,7 @@ update.sitar <- function (object, ..., evaluate = TRUE)
       # new arg xoffset
       if (!is.null(extras$xoffset)) {
         xoffset.t <- xoffset
-        xoffset <- extras$xoffset
+        xoffset <- eval(extras$xoffset)
         xoffset.t <- xoffset - xoffset.t
         x <- x - xoffset.t
         knots <- knots - xoffset.t
@@ -364,7 +369,7 @@ update.sitar <- function (object, ..., evaluate = TRUE)
       }
       # new arg df
       else if (!is.null(extras$df)) {
-        df <- extras$df
+        df <- eval(extras$df)
         knots <- quantile(x, (1:(df-1))/df)
         mcall$knots <- NULL
       }

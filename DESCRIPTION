@@ -2,8 +2,8 @@ Package: sitar
 Type: Package
 Title: Super Imposition by Translation and Rotation Growth Curve
         Analysis
-Version: 1.0.9
-Date: 2017-01-02
+Version: 1.0.10
+Date: 2017-09-15
 Author: Tim Cole
 Maintainer: Tim Cole <tim.cole@ucl.ac.uk>
 Description: Functions for fitting and plotting SITAR (Super Imposition by
@@ -15,9 +15,9 @@ LazyLoad: yes
 LazyData: yes
 Depends: R (>= 3.0.0), nlme, splines
 Imports: quantreg
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 URL: https://github.com/statist7/sitar
 NeedsCompilation: no
-Packaged: 2017-01-08 23:38:46 UTC; timcole
+Packaged: 2017-09-15 17:17:09 UTC; timcole
 Repository: CRAN
-Date/Publication: 2017-01-09 09:50:05
+Date/Publication: 2017-09-15 21:13:55 UTC

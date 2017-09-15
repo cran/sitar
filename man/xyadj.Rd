@@ -4,7 +4,8 @@
 \alias{xyadj}
 \title{Adjust x and y variables for SITAR random effects}
 \usage{
-xyadj(object, x, y = NULL, id, abc = ranef(object)[id, ], tomean = TRUE)
+xyadj(object, x, y = NULL, id, abc = ranef(object)[id, , drop = FALSE],
+  tomean = TRUE)
 }
 \arguments{
 \item{object}{a SITAR model.}
@@ -57,4 +58,3 @@ with(heights, points(xyadj(m1), col='red', pch=19))
 \author{
 Tim Cole \email{tim.cole@ucl.ac.uk}
 }
-

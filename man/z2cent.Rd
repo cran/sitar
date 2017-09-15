@@ -25,11 +25,10 @@ character strings that can be used to label the centile curves.
 z2cent(-4:4)
 
 }
-\author{
-Tim Cole \email{tim.cole@ucl.ac.uk}
-}
 \seealso{
 \code{\link{cLMS}}
 }
+\author{
+Tim Cole \email{tim.cole@ucl.ac.uk}
+}
 \keyword{character}
-

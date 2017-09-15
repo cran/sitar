@@ -5,8 +5,7 @@
 \title{Predict SITAR model}
 \usage{
 \method{predict}{sitar}(object, newdata = getData(object), level = 1, ...,
-  deriv = 0, abc = ranef(object), xfun = function(x) x,
-  yfun = function(y) y)
+  deriv = 0, abc = NULL, xfun = function(x) x, yfun = function(y) y)
 }
 \arguments{
 \item{object}{an object inheriting from class \code{sitar}.}
@@ -21,6 +20,9 @@ prediction represents the mean curve.}
 \item{level}{an optional integer giving the level(s) of grouping to be used
 in obtaining the predictions, level 0 corresponding to the population
 predictions. Defaults to level 1.}
+
+\item{\dots}{other optional arguments: \code{asList}, \code{na.action} and
+\code{naPattern}.}
 
 \item{deriv}{an optional integer specifying predictions corresponding to
 either the fitted curve or its derivative. \code{deriv = 0} (default)
@@ -39,9 +41,6 @@ the original scale, e.g. if x = log(age) then xfun = exp. Only relevant if
 
 \item{yfun}{an optional function to apply to \code{y} to convert it back to
 the original scale, e.g. if y = sqrt(height) then yfun = function(z) z^2.}
-
-\item{\dots}{other optional arguments: \code{asList}, \code{na.action} and
-\code{naPattern}.}
 }
 \value{
 A vector of the predictions, or a list of vectors if \code{asList =
@@ -75,11 +74,10 @@ vel1 <- predict(m1, deriv=1, abc=c(b=1))
 mplot(age, vel1, id, heights, col=id, add=TRUE)
 
 }
-\author{
-Tim Cole \email{tim.cole@ucl.ac.uk}
-}
 \seealso{
 \code{\link{ifun}} for a way to generate the functions \code{xfun}
 and \code{yfun} automatically from the \code{sitar} model call.
 }
-
+\author{
+Tim Cole \email{tim.cole@ucl.ac.uk}
+}

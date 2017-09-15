@@ -58,7 +58,7 @@
 #'
 #' @export
   predict.sitar <- function(object, newdata=getData(object), level=1, ...,
-                            deriv=0, abc=ranef(object),
+                            deriv=0, abc=NULL,
                             xfun=function(x) x, yfun=function(y) y) {
 # create x and id variables in newdata
     oc <- object$call.sitar
@@ -75,15 +75,27 @@
       else newdata$id <- rep.int(getGroups(object)[1], nrow(newdata))
     }
     id <- newdata$id <- factor(newdata$id)
-# check abc
-    if (abcset <- !is.data.frame(abc)) {
-      abc <- data.frame(t(abc))
-      abc[, letters[1:3][!letters[1:3] %in% names(abc)]] <- 0 # fill with zeros
-      level <- 0
-      id <- rep.int(1, length(x))
+# check abc as length-3 vector or 1-row data frame
+    if (is.null(abc)) abc <- ranef(object)
+    else if (is.vector(abc)) {
+#	abc is named vector
+      if (!is.null(names(abc)) && all(unique(names(abc)) %in% letters[1:3])) {
+        abc <- data.frame(t(abc))
+        abc[, letters[1:3][!letters[1:3] %in% names(abc)]] <- 0 # fill with zeros
+      } else
+#	abc is id level
+      if (length(abc) == 1) {
+        . <- rownames(ranef(object)) %in% abc
+        if (!any(.)) stop(paste('id', abc, 'not found'))
+        abc <- ranef(object)[., , drop=FALSE]
+      }
     }
-    abc[, letters[1:3][!letters[1:3] %in% names(ranef(object))]] <- 0 # zeros if not in model
-    abc <- abc[id, ]
+    if (is.null(nrow(abc)))
+      stop('abc should be either a single id level or up to three named random effect values')
+    else if (abcset <- nrow(abc) == 1) {
+      level <- 0
+    } else
+      abc <- abc[id, , drop=FALSE]
 # check if old-style object lacking fitnlme
     if(!'fitnlme' %in% names(object)) {
       warning('fitnlme missing - best to refit model')
@@ -92,9 +104,10 @@
 # attach object for fitnlme
     on.exit(detach(object))
     eval(parse(text='attach(object)'))
-# identify covariates needed in newdata, omitting fixed effects and x
+# identify covariates needed in newdata, omitting x, fixed effects and random effects
     argnames <- names(formals(fitnlme))
     argnames <- argnames[!argnames %in% names(fixef(object))][-1]
+    argnames <- argnames[!argnames %in% names(ranef(object))]
     if (length(argnames) > 0) {
 # check if newdata subsetted (from plot)
       if (is.null(subset <- attr(newdata, 'subset'))) {
@@ -153,7 +166,7 @@
 # VELOCITY
       else { # deriv != 0
 # mean velocity curve on back-transformed axes
-        vel0 <- predict(makess(x, pred, xfun=xfun, yfun=yfun), xfun(x), deriv=deriv)
+        vel0 <- predict(smooth.spline(xfun(x), yfun(pred)), xfun(x), deriv=deriv)
         if (any(level == 0) && !abcset) pred0 <- pred <- vel0$y
         if (any(level == 1) || abcset) {
 # level 1 prediction

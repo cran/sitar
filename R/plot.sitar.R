@@ -23,7 +23,7 @@
 #' \code{y} and \code{y} velocity from the original SITAR model. The first two
 #' elements can alternatively be provided via \code{\link{par}} parameters
 #' \code{xlab} and \code{ylab}, and the third element via \code{y2par} (see
-#' Details). Default labels are the names of \code{x} and \code{y}, and
+#' Details). The latter take precedence. Default labels are the names of \code{x} and \code{y}, and
 #' "\code{y} velocity", suitably adjusted to reflect any back-transformation
 #' via \code{xfun} and \code{yfun}.
 #' @param apv optional logical specifying whether or not to calculate the age
@@ -89,7 +89,7 @@
 #' lines(m1, opt='d', lwd=2, abc=-sqrt(diag(getVarCov(m1))))
 #'
 #' @importFrom grDevices xy.coords
-#' @importFrom graphics axis identify legend lines locator par text title mtext
+#' @importFrom graphics axis identify legend lines locator par text title mtext abline
 #' @export
 plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, subset=NULL,
 	                     ns=101, abc=NULL, add=FALSE, nlme=FALSE, ...) {
@@ -136,31 +136,52 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 		  lapply(as.list(dots), eval, data, parent.frame())
 		else
 		  NULL
+# create missing labels
+		if (missing(labels))
+		  labels <- vector('character', 3)
+		else if (length(labels) < 3)
+		  labels <- c(labels, '', '')
+# test for velocity plot
+		optv <- all(unique(strsplit(tolower(opt), '')[[1]]) == 'v')
+# test for velocity plot label via y2par
+		if (!is.null(ARG$y2par$ylab)) {
+		  labels[3] <- ARG$y2par$ylab
+		  if (optv)
+		    ARG$ylab <- labels[2] <- ARG$y2par$ylab
+		}
 #	if xlab not specified replace with label or x name (depending on xfun)
 		if (is.null(ARG$xlab)) {
-		  ARG$xlab <- if(!missing(labels))
+		  ARG$xlab <- if(labels[1] != '')
 		    labels[1]
 		  else {
-		    if(!is.null(xfun))
+		    if (!is.null(xfun))
 		      paste0('(', deparse(substitute(xfun)), ')(', deparse(mcall$x), ")")
 		    else
 		      attr(ifun(mcall$x), 'varname')
 		  }
-		}
+		} else
+		  labels[1] <- ARG$xlab
 #	if ylab not specified replace with label or y name (depending on yfun)
 		if (is.null(ARG$ylab)) {
-		  ARG$ylab <- if(!missing(labels))
-		    labels[2]
+		  if(labels[2] != '')
+		    ARG$ylab <- labels[2]
 		  else {
-		    if(!is.null(yfun))
+		    ARG$ylab <- if (!is.null(yfun))
 		      paste0('(', deparse(substitute(yfun)), ')(', deparse(mcall$y), ")")
 		    else
 		      attr(ifun(mcall$y), 'varname')
+	      labels[2] <- ARG$ylab
 		  }
-		}
-# if labels not specified create it
-		if (missing(labels))
-		  labels <- c(ARG$xlab, ARG$ylab, paste(ARG$ylab, 'velocity'))
+	    if (labels[3] == '')
+	      labels[3] <- paste(ARG$ylab, 'velocity')
+		} else {
+   	  labels[2] <- ARG$ylab
+   	  if (optv)
+   	    labels[3] <- ARG$ylab
+  		else
+  		  if (labels[3] == '')
+  		    labels[3] <- paste(ARG$ylab, 'velocity')
+   	}
 
 #	create output list
 		xy <- list()
@@ -224,39 +245,30 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 # if subset, flag for predict
       if (!identical(subset, rep_len(TRUE, nf))) attr(newdata, 'subset') <- subset
 
-#	adjust for abc
-			if (!is.null(abc)) {
-#	abc is id level
-				if (length(abc) == 1) {
-					idabc <- rownames(ranef(model)) %in% abc
-					if (sum(idabc) == 0) stop(paste('id', abc, 'not found'))
-					abc <- ranef(model)[idabc, ]
-				}
-#	abc is named vector
-			  else if (length(abc) > 3 || is.null(names(abc)))
-			    stop('abc should be either single id level or up to three named random effect values')
-			}
-  		else abc <- ranef(model)
-
+# distance and velocity
+			xt <- xfun(xt)
 			yt <- yfun(predict(object=model, newdata=newdata, level=0, abc=abc))
 			vt <- predict(object=model, newdata=newdata, level=0, deriv=1, abc=abc, xfun=xfun, yfun=yfun)
-#	derive cubic smoothing spline curve
-			xt <- xfun(xt)
-			xy$ss <- ss <- makess(xt, yt)
 
+# plot curve(s)
 			if (grepl("d", opt) && grepl("v", opt)) {
 				xy <- do.call("y2plot", c(list(x=xt, y1=yt, y2=vt, labels=labels, add=add, xy=xy), ARG))
-				add <- TRUE
 			} else
 			if (grepl("d", opt)) {
 				xy <- do.call("y2plot", c(list(x=xt, y1=yt, add=add, xy=xy), ARG))
-				add <- TRUE
 			} else
 			if (grepl("v", opt)) {
 				ARG$ylab <- labels[3]
 				xy <- do.call("y2plot", c(list(x=xt, y1=vt, labels=labels[c(1,3)], add=add, xy=xy), ARG))
-				add <- TRUE
 			}
+#	plot vertical line at age of peak velocity
+  		if (apv) {
+  			xy$apv <- getPeakTrough(xt, vt)
+  			if (!is.na(opt)) print(signif(xy$apv, 4))
+				if (is.null(ARG$y2par$lty)) ARG$y2par$lty <- 3
+				do.call('abline', c(list(v=xy$apv[1]), ARG$y2par))
+  		}
+			add <- TRUE
 		}
 
 #	plot fixed effects distance curve
@@ -275,16 +287,6 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 			yt <- yt$y
     	do.call("mplot", c(list(x=xfun(xt), y=yfun(yt), id=id, subset=subset, add=add), ARG))
 			add <- TRUE
-		}
-
-#	plot vertical line at age of peak velocity
-		if (apv) {
-			xy$apv <- ss$apv
-			if (!is.na(opt)) print(signif(xy$apv, 4))
-			if (add) {
-				if (is.null(ARG$y2par$lty)) ARG$y2par$lty <- 3
-				do.call('abline', c(list(v=xy$apv[1]), ARG$y2par))
-			}
 		}
 		invisible(xy)
 	}
