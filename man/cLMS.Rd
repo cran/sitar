@@ -11,7 +11,7 @@ cLMS(z, L = 1, M, S)
 zLMS(x, L = 1, M, S)
 }
 \arguments{
-\item{z}{vector of z-scores to be converted to measurements.}
+\item{z}{vector or one-column matrix of z-scores to be converted to measurements.}
 
 \item{L}{vector of Box-Cox transformation (lambda) values, L in the LMS
 method.}
@@ -20,14 +20,15 @@ method.}
 
 \item{S}{vector of coefficients of variation (sigma), S in the LMS method.}
 
-\item{x}{vector of measurements to be converted to z-scores.}
+\item{x}{vector or one-column matrix of measurements to be converted to z-scores.}
 }
 \value{
-\code{zLMS} and \code{cLMS} each return a vector or matrix,
-respectively of z-scores and measurement centiles, with the number of rows
-matching the length of \code{x} or \code{z}, and the number of columns
-matching the length of L, M and S. If the two lengths are the same, or if
-either length is 1, a vector is returned.
+If \code{x} and \code{z} are vectors \code{zLMS} and \code{cLMS}
+each return a vector, respectively of z-scores and measurement centiles, with length
+matching the length of (the longest of) \code{x} or \code{z}, L, M and S.
+If \code{x} or \code{z} are matrices \code{zLMS} and \code{cLMS} each return a matrix,
+the number of rows matching the length of (the longest of) L, M and S,
+and the number of columns matching the length of \code{x} or \code{z}.
 }
 \description{
 Routines to handle references constructed with the LMS method. Given a set
@@ -35,25 +36,26 @@ of LMS values, the functions convert z-scores to measurement centiles and
 vice versa.
 }
 \details{
-L, M and S should all be the same length, recycled if necessary. The
-formulae converting \code{x} to \code{z} and vice versa are:
+L, M and S -- and if vectors then \code{x} and \code{z} --
+should all be the same length, recycled if necessary.
+The formulae converting \code{x} to \code{z} and vice versa are:
 \deqn{z = \frac{(x/M)^L - 1}{L S}}{z = ((x/M)^L - 1)/L/S}
 
 \deqn{x = M (1 + L S z)^{1/L})}{x = M (1 + L S z)^(1/L)} where L is reset
-to 10^-7 if it is zero. \code{x} and \code{z} are usually the same length as
-L M and S, but can be different. The LMS method is the same as the BCCG
+to 10^-7 if it is zero. The LMS method is the same as the BCCG
 family in the \code{gamlss} package, except that lambda in LMS is referred
 to as nu in BCCG.
 }
 \examples{
 
-cLMS(z = -2:2, L = 1:-1, M = 5:7, S = rep(0.1, 3))
-cLMS(z = -2:2, L = 1:-1, M = 7, S = 0.1)
+cLMS(z = as.matrix(-2:2), L = 1:-1, M = 5:7, S = rep(0.1, 3))
+cLMS(z = 0:2, L = 1:-1, M = 7, S = 0.1)
+cLMS(z = as.matrix(0:2), L = 1:-1, M = 7, S = 0.1)
 zLMS(x = 6.5, L = 1:-1, M = 5:7, S = rep(0.1, 3))
 
 }
 \seealso{
-\code{\link{z2cent}}, \code{\link{LMS2z}}
+\code{\link{z2cent}}, \code{\link{LMS2z}}, \code{\link{pdLMS}}
 }
 \author{
 Tim Cole \email{tim.cole@ucl.ac.uk}

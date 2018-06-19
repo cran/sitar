@@ -4,13 +4,13 @@
 #' reference previously fitted by the LMS method.
 #'
 #' Vectors of L, M and S corresponding to \code{x} and \code{sex} are extracted
-#' and passed to either \code{\link{cLMS}} or \code{\link{zLMS}}, depending on
-#' \code{toz}.
+#' using cubic interpolation and passed to either \code{\link{cLMS}} or
+#' \code{\link{zLMS}}, depending on \code{toz}.
 #'
 #' @param x vector of ages.
-#' @param y vector of either measurements or z-scores, depending on the value
-#' of \code{toz}.
-#' @param sex factor where males = 1 and females = 2.
+#' @param y vector or one-column matrix of either measurements or z-scores,
+#' depending on the value of \code{toz}.
+#' @param sex vector where males = 1 and females = 2.
 #' @param measure measurement, either as name or character string, the choice
 #' depending on the choice of \code{ref} (see e.g. references \code{uk90},
 #' \code{who06} and \code{ukwhopt}).
@@ -18,17 +18,19 @@
 #' as a \code{data} object or data frame.
 #' @param toz logical set to TRUE for conversion from measurement to z-score,
 #' or FALSE for the reverse.
-#' @param verbose logical set to TRUE to print the associated LMS table.
-#' @return A vector or matrix, depending on the lengths of \code{x} and
-#' \code{y}, containing the transformed values. If the two lengths are the
-#' same, or either is one, then a vector is returned. If they are different and
-#' not one, then a matrix with \code{length(x)} rows and \code{length(y)}
-#' columns is returned. In this latter case the row names are set to \code{x},
-#' and if \code{toz} is false the column names are set using \code{z2cent}.
+#' @param LMStable logical set to TRUE to return the associated LMS table as
+#' a data frame in attribute \code{LMStable}.
+#' @return A vector or matrix containing the transformed values. If \code{y}
+#' is a vector then a vector is returned, else if \code{y} is a one-column matrix
+#' then a matrix is returned, with \code{length(x)} rows and \code{length(y)}
+#' columns. The matrix row names are set to \code{x}, and the column names to
+#' either \code{y} or if \code{toz} is FALSE, \code{z2cent(y)}. If LMStable is
+#' TRUE the associated LMS table is returned as a data frame in attribute
+#' \code{LMStable}.
 #' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
 #' @seealso \code{\link{z2cent}}. The LMS method can be fitted to data using
-#' the package \code{gamlss} with the \code{BCCG} family, where nu (originally
-#' lambda), mu and sigma correspond to L, M and S respectively.
+#' the package \code{gamlss} with the \code{BCCG} or \code{BCCGo} family,
+#' where nu (originally lambda), mu and sigma correspond to L, M and S respectively.
 #' @keywords arith
 #' @examples
 #'
@@ -41,18 +43,12 @@
 #' data(who06)
 #' zs <- -4:4*2/3 # z-scores for centiles
 #' ages <- 0:12/4 # 3-month ages
-#' v <- vapply(as.list(zs), function(z)
-#'  LMS2z(ages, z, sex = 1, measure = wt, ref = who06, toz = FALSE),
-#'   rep(0, length(ages)))
-#' dimnames(v) <- list(ages, z2cent(zs))
-#' round(v, 2)
+#' LMS2z(ages, as.matrix(zs), sex = 1, measure = wt, ref = who06, toz = FALSE)
 #'
 #' @export LMS2z
-	LMS2z <- function(x, y, sex, measure, ref, toz=TRUE, verbose=FALSE) {
-# fails for sex = 'female' by itself - consider using malesex instead
-	xy <- data.frame(cbind(x, y, sex=as.integer(as.factor(sex))))
+	LMS2z <- function(x, y, sex, measure, ref, toz=TRUE, LMStable=FALSE) {
+	xy <- data.frame(x, sex)
 	x <- xy$x
-	y <- xy$y
 	sex <- xy$sex
 	v <- matrix(nrow=length(x), ncol=3)
   colnames(v) <- c('L', 'M', 'S')
@@ -73,12 +69,14 @@
 		}
 	}
   cz <- do.call(ifelse(toz, 'zLMS', 'cLMS'), list(y, v[, 1], v[, 2], v[, 3]))
-	if (!is.null(dim(cz))) {
-	  cz <- as.data.frame(cz)
-	  if (!toz) names(cz) <- z2cent(y)
+  if (is.matrix(cz)) {
+	  dimnames(cz) <- if (toz)
+	    list(x, y)
+	  else
+	    list(x, z2cent(y))
 	}
-	if (verbose)
-  	print(cbind(y, cz, sex, v), digits=6)
+	if (LMStable)
+	  attr(cz, 'LMStable') <- as.data.frame(v)
 	cz
 }
 
@@ -88,56 +86,60 @@
 #' of LMS values, the functions convert z-scores to measurement centiles and
 #' vice versa.
 #'
-#' L, M and S should all be the same length, recycled if necessary. The
-#' formulae converting \code{x} to \code{z} and vice versa are:
+#' L, M and S -- and if vectors then \code{x} and \code{z} --
+#' should all be the same length, recycled if necessary.
+#' The formulae converting \code{x} to \code{z} and vice versa are:
 #' \deqn{z = \frac{(x/M)^L - 1}{L S}}{z = ((x/M)^L - 1)/L/S}
 #'
 #' \deqn{x = M (1 + L S z)^{1/L})}{x = M (1 + L S z)^(1/L)} where L is reset
-#' to 10^-7 if it is zero. \code{x} and \code{z} are usually the same length as
-#' L M and S, but can be different. The LMS method is the same as the BCCG
+#' to 10^-7 if it is zero. The LMS method is the same as the BCCG
 #' family in the \code{gamlss} package, except that lambda in LMS is referred
 #' to as nu in BCCG.
 #'
 #' @aliases cLMS zLMS
-#' @param x vector of measurements to be converted to z-scores.
-#' @param z vector of z-scores to be converted to measurements.
+#' @param x vector or one-column matrix of measurements to be converted to z-scores.
+#' @param z vector or one-column matrix of z-scores to be converted to measurements.
 #' @param L vector of Box-Cox transformation (lambda) values, L in the LMS
 #' method.
 #' @param M vector of medians (mu), M in the LMS method.
 #' @param S vector of coefficients of variation (sigma), S in the LMS method.
-#' @return \code{zLMS} and \code{cLMS} each return a vector or matrix,
-#' respectively of z-scores and measurement centiles, with the number of rows
-#' matching the length of \code{x} or \code{z}, and the number of columns
-#' matching the length of L, M and S. If the two lengths are the same, or if
-#' either length is 1, a vector is returned.
+#' @return If \code{x} and \code{z} are vectors \code{zLMS} and \code{cLMS}
+#' each return a vector, respectively of z-scores and measurement centiles, with length
+#' matching the length of (the longest of) \code{x} or \code{z}, L, M and S.
+#' If \code{x} or \code{z} are matrices \code{zLMS} and \code{cLMS} each return a matrix,
+#' the number of rows matching the length of (the longest of) L, M and S,
+#' and the number of columns matching the length of \code{x} or \code{z}.
 #' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
-#' @seealso \code{\link{z2cent}}, \code{\link{LMS2z}}
+#' @seealso \code{\link{z2cent}}, \code{\link{LMS2z}}, \code{\link{pdLMS}}
 #' @keywords arith
 #' @examples
 #'
-#' cLMS(z = -2:2, L = 1:-1, M = 5:7, S = rep(0.1, 3))
-#' cLMS(z = -2:2, L = 1:-1, M = 7, S = 0.1)
+#' cLMS(z = as.matrix(-2:2), L = 1:-1, M = 5:7, S = rep(0.1, 3))
+#' cLMS(z = 0:2, L = 1:-1, M = 7, S = 0.1)
+#' cLMS(z = as.matrix(0:2), L = 1:-1, M = 7, S = 0.1)
 #' zLMS(x = 6.5, L = 1:-1, M = 5:7, S = rep(0.1, 3))
 #'
 #' @export cLMS
 	cLMS <- function(z, L = 1, M, S) {
-	  L <- L + 1e-7 * (L == 0)
-	  LMS <- data.frame(cbind(L, M, S))
-	  if (length(z) == nrow(LMS) || min(length(z), nrow(LMS)) == 1)
-	    drop(with(LMS, M * (1 + L * S * z) ^ (1/L)))
+	  L[L == 0] <- 1e-7
+	  if (is.vector(z))
+	    with(data.frame(z, L, M, S),
+	         M * (1 + L * S * z) ^ (1/L))
 	  else
-	    drop(with(LMS, M * (1 + L * S %*% t(z)) ^ (1/L)))
+	    with(data.frame(L, M, S),
+	      M * (1 + L * outer(S, as.vector(z))) ^ (1/L))
 	}
 
 #' @rdname cLMS
 #' @export
 	zLMS <- function(x, L = 1, M, S) {
-	  L <- L + 1e-7 * (L == 0)
-	  LMS <- data.frame(cbind(L, M, S))
-	  if (length(x) == nrow(LMS) || min(length(x), nrow(LMS)) == 1)
-	    drop(with(LMS, ((x / M) ^ L - 1) / L / S))
+	  L[L == 0] <- 1e-7
+	  if (is.vector(x))
+	    with(data.frame(x, L, M, S),
+	      ((x/M) ^ L - 1) / L / S)
 	  else
-	    drop(with(LMS, (t(x %*% t(1 / M)) ^ L - 1) / L / S))
+	    with(data.frame(L, M, S),
+	      (t(outer(as.vector(x), M, `/`)) ^ L - 1) / L / S)
 	}
 
 #' Express z-scores as centile character strings for plotting
@@ -146,26 +148,27 @@
 #' character strings that can be used to label the centile curves.
 #'
 #' @param z a scalar or vector of z-scores.
-#' @return A character string is returned, the same length as z. Z-scores in
-#' the range +/- 3.3 are converted to centiles with one or two significant
-#' figures (lower tail) or to their complement (upper tail). For z-scores
-#' exceeding 3.3 in absolute value the character consists of "SDS" appended to
-#' the z-score rounded to one decimal place.
+#' @return A character string is returned, the same length as z. Z-scores between
+#' the 1st and 99th centile are converted to centiles with one or two significant
+#' figures (lower tail) or to their complement (upper tail). For larger z-scores
+#' in absolute value the character consists of "SDS" appended to the z-score
+#' rounded to one decimal place.
 #' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
 #' @seealso \code{\link{cLMS}}
 #' @keywords character
 #' @examples
 #'
 #' z2cent(-4:4)
+#' z2cent(qnorm(0:100/100))
 #'
 #' @export z2cent
 	z2cent <- function(z) {
-	np <- ifelse(abs(z) < 2.33, 0, 1)
+	np <- abs(z) > qnorm(0.99)
 	ct <- round(pnorm(z) * 100, np)
-	mod10 <- ifelse(np == 1, 0, floor(ct %% 10))
-	th <- ifelse(mod10 == 0 | mod10 > 4, 4, mod10)
-	th <- paste(ct, c('st','nd','rd','th')[th], sep='')
-	th[th == '0th'] <- paste('SDS', round(z[th == '0th'], 1), sep='')
+	mod10 <- ifelse(np, 0, floor(ct %% 10))
+	th <- ifelse(mod10 == 0 | mod10 > 4 | (ct > 10 & ct < 14), 4, mod10)
+	th <- paste0(ct, c('st', 'nd', 'rd', 'th')[th])
+	th[th == '0th'] <- paste0('SDS', round(z[th == '0th'], 1))
 	th[th == '100th'] <- paste('SDS', round(z[th == '100th'], 1), sep='+')
 	th
 }

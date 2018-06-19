@@ -10,10 +10,13 @@
 #' @param object an object inheriting from class \code{sitar}.
 #' @param newdata an optional data frame to be used for obtaining the
 #' predictions. It requires named columns for \code{x}, and for \code{id} if
-#' \code{level = 1}, matching the names in \code{object}. Any covariates in
+#' \code{level = 1}, matching the names in \code{object}. Variables with the
+#' reserved names \code{x=.x} or \code{id=.id} take precedence over the model
+#' \code{x} and \code{id} variables. Any covariates in
 #' \code{a.formula}, \code{b.formula} or \code{c.formula} can also be included.
 #' By default their values are set to the mean, so when \code{level = 0} the
 #' prediction represents the mean curve.
+#'
 #' @param level an optional integer giving the level(s) of grouping to be used
 #' in obtaining the predictions, level 0 corresponding to the population
 #' predictions. Defaults to level 1.
@@ -60,21 +63,27 @@
   predict.sitar <- function(object, newdata=getData(object), level=1, ...,
                             deriv=0, abc=NULL,
                             xfun=function(x) x, yfun=function(y) y) {
-# create x and id variables in newdata
+# create x in newdata
     oc <- object$call.sitar
-    if (is.null(newdata$x)) newdata$x <- eval(oc$x, newdata)
-    x <- newdata$x
+    x <- if ('.x' %in% names(newdata))
+      newdata$.x
+    else
+      eval(oc$x, newdata)
     if (is.null(xoffset <- object$xoffset)) {
       xoffset <- mean(getCovariate(object))
       warning('xoffset set to mean(x) - best to refit model')
     }
-    newdata$x <- newdata$x - xoffset
+    newdata$x <- x - xoffset
 # create id in newdata
-    if (is.null(newdata$id)) {
-      if (any(level == 1)) newdata$id <- eval(oc$id, newdata)
-      else newdata$id <- rep.int(getGroups(object)[1], nrow(newdata))
+    id <- if ('.id' %in% names(newdata))
+      newdata$.id
+    else {
+      if (any(level == 1))
+        eval(oc$id, newdata)
+      else
+        rep.int(getGroups(object)[1], nrow(newdata))
     }
-    id <- newdata$id <- factor(newdata$id)
+    newdata$id <- id
 # check abc as length-3 vector or 1-row data frame
     if (is.null(abc)) abc <- ranef(object)
     else if (is.vector(abc)) {

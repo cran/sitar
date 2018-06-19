@@ -1,12 +1,12 @@
 #' Plot multiple growth curves
-#' 
+#'
 #' Function to plot multiple growth curves indexed by subject id.
-#' 
+#'
 #' The arguments \code{x}, \code{y} and \code{id} can be given as character
 #' strings. The \code{\link{par}} parameters can be functions of vector
 #' variables in \code{data}, e.g. to colour curves separately by \code{id} use:
 #' \code{col = id}.
-#' 
+#'
 #' @param x vector of x coordinates.
 #' @param y vector of y coordinates.
 #' @param id factor denoting subject levels.
@@ -19,11 +19,10 @@
 #' character expansion \code{cex}, colour \code{col}, line type \code{lty},
 #' line width \code{lwd} and character \code{pch}.
 #' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
-#' @seealso \code{\link{y2plot}}
 #' @examples
-#' 
+#'
 #' mplot(age, height, id, heights, col=id)
-#' 
+#'
 #' @export mplot
 	mplot <- function(x, y, id, data=parent.frame(), subset=NULL, add=FALSE, ...) {
 #	plots y ~ x by id with data
@@ -35,18 +34,25 @@
 #	save x y id
 	mcall <- match.call()[-1]
 	df <- as.data.frame(lapply(as.list(mcall[1:3]), function(z) {
-		if (is.character(z)) with(data,	get(z, inherits=TRUE))
-		else eval(z, envir = data, enclos = parent.frame())
+	  if (is.numeric(z))
+	    z
+	  else if (is.character(z))
+		  with(data, get(z, inherits=TRUE))
+		else
+		  eval(z, data, parent.frame())
 	}))
-	if (length(deparse(mcall)) == 1) {
-    names(df) <- lapply(as.list(mcall[1:3]), function(z) {
-  		if (is.character(z)) z else deparse(z)
-  	})
-	}
+  names(df) <- lapply(as.list(mcall[1:3]), function(z) {
+	  if (is.numeric(z) || is.factor(z))
+	    NULL
+  	else if (is.character(z))
+  		  z
+    else
+      deparse(z)
+  })
 
 #	extract and save vector par args: bg cex col lty lwd pch
 	if (length(dots <- match.call(expand.dots=FALSE)$...) > 0) {
-		ARG <- lapply(as.list(dots), eval, envir = data, enclos = parent.frame())
+		ARG <- lapply(as.list(dots), eval, data, parent.frame())
 		cnames <- names(ARG)[lapply(ARG, length) == nrow(df)]
 		df[, cnames] <- ARG[cnames]
 		ARG[cnames] <- NULL
@@ -58,18 +64,22 @@
 #	subset data
 	subset <- eval(substitute(subset), data, parent.frame())
 	if (!is.null(subset)) {
-		if (length(subset) != nrow(df)) stop('subset wrong length for data')
-		subset <- ifelse(is.na(df[, 1]) | is.na(df[, 2]), FALSE, subset)
+		if (length(subset) != nrow(df))
+		  stop('subset wrong length for data')
 		df <- df[subset, ]
 	}
-	if (nrow(df) == 0) stop("no data to plot")
+	df <- na.omit(df)
+	if (nrow(df) == 0)
+	  stop("no data to plot")
 
 #	plot axes if new graph
 	if (!add) {
-		if (!"xlab" %in% names(ARG)) ARG <- c(ARG, list(xlab=quote(names(df)[1])))
-		if (!"ylab" %in% names(ARG)) ARG <- c(ARG, list(ylab=quote(names(df)[2])))
+		if (!"xlab" %in% names(ARG))
+		  ARG <- c(ARG, list(xlab=quote(names(df)[1])))
+		if (!"ylab" %in% names(ARG))
+		  ARG <- c(ARG, list(ylab=quote(names(df)[2])))
 		type <- match(names(ARG), "type", 0)
-		do.call("plot", c(list(x=df[, 1], y=df[, 2], type='n'), ARG[!type]))
+		do.call("plot", c(list(x=range(df[, 1], na.rm=TRUE), y=range(df[, 2], na.rm=TRUE), type='n'), ARG[!type]))
 	}
 
 #	draw growth curves
@@ -77,7 +87,8 @@
 #	sort by x
 		ox <- order(z[, 1])
 #	restore vector ... args
-		if (length(cnames) > 0) ARG[cnames] <- as.list(as.data.frame(z[ox, cnames], stringsAsFactors=FALSE))
+		if (length(cnames) > 0)
+		  ARG[cnames] <- as.list(as.data.frame(z[ox, cnames], stringsAsFactors=FALSE))
 #	lines(x, y, ...)
 		do.call("lines", c(list(x=z[ox, 1], y=z[ox, 2]), ARG))
 	})

@@ -3,33 +3,63 @@
 \name{plot.sitar}
 \alias{plot.sitar}
 \alias{lines.sitar}
+\alias{plot_d}
+\alias{plot_v}
+\alias{plot_D}
+\alias{plot_V}
+\alias{plot_u}
+\alias{plot_a}
+\alias{plot_c}
 \alias{lines.sitar}
+\alias{plot_d}
+\alias{plot_v}
+\alias{plot_D}
+\alias{plot_V}
+\alias{plot_u}
+\alias{plot_a}
+\alias{plot_c}
 \title{Plot SITAR model}
 \usage{
 \method{plot}{sitar}(x, opt = "dv", labels, apv = FALSE, xfun = NULL,
   yfun = NULL, subset = NULL, ns = 101, abc = NULL, add = FALSE,
-  nlme = FALSE, ...)
+  nlme = FALSE, returndata = FALSE, ..., xlab = NULL, ylab = NULL,
+  vlab = NULL, xlim = c(NA, NA), ylim = c(NA, NA), vlim = c(NA, NA),
+  legend = list(x = "topleft", inset = 0.04, bty = "o"))
 
 \method{lines}{sitar}(x, ...)
+
+plot_d(x, ...)
+
+plot_v(x, ...)
+
+plot_D(x, ...)
+
+plot_V(x, ...)
+
+plot_u(x, ...)
+
+plot_a(x, ...)
+
+plot_c(x, ...)
 }
 \arguments{
 \item{x}{object of class \code{sitar}.}
 
 \item{opt}{character string containing a subset of letters corresponding to
 the options: 'd' for fitted Distance curve, 'v' for fitted Velocity curve,
-'e' for fitted fixed Effects distance curve, 'D' for individual fitted
+'c' for fitted Crosssectional distance curve, 'D' for individual fitted
 Distance curves, 'V' for individual fitted Velocity curves, 'u' for
 Unadjusted individual growth curves, and 'a' for Adjusted individual growth
-curves. Options 'dveDV' give spline curves, while 'ua' give data curves made
+curves. Options 'dvcDV' give spline curves, while 'ua' give data curves made
 up as line segments. If both distance and velocity curves are specified, the
 axis for the velocity curve appears on the right side of the plot (y2), and
 a legend identifying the distance and velocity curves is provided.}
 
 \item{labels}{optional character vector containing plot labels for \code{x},
-\code{y} and \code{y} velocity from the original SITAR model. The first two
-elements can alternatively be provided via \code{\link{par}} parameters
-\code{xlab} and \code{ylab}, and the third element via \code{y2par} (see
-Details). The latter take precedence. Default labels are the names of \code{x} and \code{y}, and
+\code{y} and \code{y} velocity from the original SITAR model. The three
+elements can alternatively be provided via parameters
+\code{xlab}, \code{ylab} and \code{vlab}. The latter take precedence.
+Default labels are the names of \code{x} and \code{y}, and
 "\code{y} velocity", suitably adjusted to reflect any back-transformation
 via \code{xfun} and \code{yfun}.}
 
@@ -51,7 +81,8 @@ and inverts any transformation applied to y in the original SITAR model
 call. To plot on the transformed scale set \code{yfun} to \code{I}.}
 
 \item{subset}{optional logical vector of length \code{x} defining a subset
-of \code{data} rows to be plotted.}
+of \code{data} rows to be plotted, for \code{x} and \code{data} in the
+original \code{sitar} call.}
 
 \item{ns}{scalar defining the number of points for spline curves
 (default 101).}
@@ -69,33 +100,63 @@ new (FALSE). TRUE is equivalent to using \code{lines}.}
 \item{nlme}{optional logical which set TRUE plots the model as an
 \code{nlme} object, using \code{plot.nlme} arguments.}
 
+\item{returndata}{logical defining whether to plot the data (default FALSE)
+or just return the data for plotting (TRUE).}
+
 \item{\dots}{Further graphical parameters (see \code{par}) may also be
-supplied as arguments, e.g. axis labels \code{xlab} and \code{ylab}, line
-type \code{lty}, line width \code{lwd}, and color \code{col}. For the
+supplied as arguments, e.g. line
+type \code{lty}, line width \code{lwd}, and colour \code{col}. For the
 velocity (y2) plot \code{y2par} can be used (see Details).}
+
+\item{xlab}{optional label for x axis}
+
+\item{ylab}{optional label for y axis}
+
+\item{vlab}{optional label for v axis (velocity)}
+
+\item{xlim}{optional x axis limits}
+
+\item{ylim}{optional y axis limits}
+
+\item{vlim}{optional v axis limits}
+
+\item{legend}{optional list of arguments for legend with distance-velocity plots}
 }
 \value{
-Returns invisibly a list of three objects:
-\item{ss}{\code{smooth.spline} object corresponding to the fitted distance
-curve.} \item{usr}{value of \code{par('usr')} for the main plot.}
+If \code{returndata} is FALSE returns invisibly a list of (up to) three objects:
+\item{usr}{value of \code{par('usr')} for the main plot.}
 \item{usr2}{the value of \code{par('usr')} for the velocity (y2) plot.}
 \item{apv}{if argument \code{apv} is TRUE a named list giving the age at
-peak velocity (apv) and peak velocity (pv) from the fitted velocity curve.}
+peak velocity (apv) and peak velocity (pv) from the fitted velocity curve,
+either overall or (with options D or V) for all subjects.}
+If \code{returndata} is TRUE (which it is with the helper functions) returns
+invisibly either a tibble or named list of tibbles,
+containing the data to be plotted. The helper functions each return a tibble.
+The variable names are '.x', '.y' and
+(for curves grouped by subject) '.id'. Note that '.x' and '.y' are returned
+after applying \code{xfun} and \code{yfun}. Hence if for examplex \code{x = log(age)}
+in the original \code{sitar} call then '.x' corresponds by default to \code{age}.
 }
 \description{
 \code{plot} and \code{lines} methods for objects of class \code{sitar},
-providing various flavours of plot of the fitted growth curves.
+providing various flavours of plot of the fitted growth curves. Also helper
+functions to return the data for plotting, e.g. with \code{ggplot2}.
 }
 \details{
-For option 'dv' (the default) the velocity curve plot (with right axis) can
-be annotated with \code{par} parameters given as a named list called
-\code{y2par}. To suppress the legend that comes with it set \code{xlegend =
-NULL}.
+For options involving both distance curves (options 'dcDua') and velocity curves
+(options 'vV') the velocity curve plot (with right axis) can be annotated with
+\code{par} parameters given as a named list called \code{y2par}.
+To suppress the legend that comes with it set \code{legend = NULL}.
+
+The helper functions \code{plot_d}, \code{plot_v}, \code{plot_D},
+\code{plot_V}, \code{plot_u}, \code{plot_a} and \code{plot_c}
+correspond to the seven plot \code{option}s defined by their last letter,
+and return the data for plotting, e.g. for use with \code{ggplot2}.
 }
 \examples{
 
 ## fit sitar model
-m1 <- sitar(x=age, y=height, id=id, data=heights, df=7)
+m1 <- sitar(x=age, y=height, id=id, data=heights, df=4)
 
 ## draw fitted distance and velocity curves
 ## with velocity curve in blue
@@ -112,10 +173,17 @@ lines(m1, opt='d', col='red', lwd=2)
 ## add mean curve for a, b, c = -1 SD
 lines(m1, opt='d', lwd=2, abc=-sqrt(diag(getVarCov(m1))))
 
+## draw fitted height distance curves coloured by subject, using ggplot
+\dontrun{
+require(ggplot2)
+ggplot(plot_D(m1), aes(.x, .y, colour=.id)) +
+labs(x='age', y='height') +
+geom_line(show.legend=FALSE)
+}
 }
 \seealso{
 \code{\link{mplot}},
-\code{\link{plotclean}}, \code{\link{y2plot}}, \code{\link{ifun}}
+\code{\link{plotclean}}, \code{\link{ifun}}
 }
 \author{
 Tim Cole \email{tim.cole@ucl.ac.uk}

@@ -12,7 +12,9 @@
 
 \item{newdata}{an optional data frame to be used for obtaining the
 predictions. It requires named columns for \code{x}, and for \code{id} if
-\code{level = 1}, matching the names in \code{object}. Any covariates in
+\code{level = 1}, matching the names in \code{object}. Variables with the
+reserved names \code{x=.x} or \code{id=.id} take precedence over the model
+\code{x} and \code{id} variables. Any covariates in
 \code{a.formula}, \code{b.formula} or \code{c.formula} can also be included.
 By default their values are set to the mean, so when \code{level = 0} the
 prediction represents the mean curve.}
