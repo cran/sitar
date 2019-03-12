@@ -9,28 +9,22 @@
 #' @return Respectively the data frame and \code{x} variable
 #' used in the fit, and the returned variance-covariance matrix.
 #' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
-#' @importFrom nlme getData
 #' @method getData sitar
 #' @export
   getData.sitar <- function(object) {
     object$call <- object$call.sitar
-    class(object) <- 'lme'
+    class(object) <- class(object)[-1]
     getData(object)
   }
 
-
 #' @rdname getData.sitar
-#' @importFrom nlme getCovariate
 #' @method getCovariate sitar
 #' @export
-  getCovariate.sitar <- function(object, ...)
-  {
+  getCovariate.sitar <- function(object, ...) {
     eval(object$call.sitar$x, getData(object))
   }
 
-
 #' @rdname getData.sitar
-#' @importFrom nlme getVarCov
 #' @method getVarCov sitar
 #' @export
   getVarCov.sitar <- function(obj, ...) {

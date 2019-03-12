@@ -4,15 +4,15 @@
 \alias{dfset}
 \title{Find degrees of freedom for a natural spline curve to minimise BIC or AIC}
 \usage{
-dfset(x, y, data = parent.frame(), FUN = BIC, df = 1:15, plot = FALSE,
-  ...)
+dfset(x, y, data = parent.frame(), FUN = BIC, df = 1:15,
+  plot = FALSE, ...)
 }
 \arguments{
 \item{x}{vector of x coordinates.}
 
 \item{y}{vector of y coordinates.}
 
-\item{data}{data frame containing \code{x} and \code{y}.}
+\item{data}{environment containing \code{x} and \code{y}.}
 
 \item{FUN}{function to be minimised (e.g. BIC or AIC).}
 
@@ -23,7 +23,7 @@ dfset(x, y, data = parent.frame(), FUN = BIC, df = 1:15, plot = FALSE,
 \item{\dots}{parameters to pass to \code{plot}.}
 }
 \value{
-Optimal degrees of freedom.
+degrees of freedom and value of FUN at minimum.
 }
 \description{
 \code{dfset} fits a natural cubic spline for a range

@@ -10,21 +10,14 @@
 \alias{plot_u}
 \alias{plot_a}
 \alias{plot_c}
-\alias{lines.sitar}
-\alias{plot_d}
-\alias{plot_v}
-\alias{plot_D}
-\alias{plot_V}
-\alias{plot_u}
-\alias{plot_a}
-\alias{plot_c}
 \title{Plot SITAR model}
 \usage{
 \method{plot}{sitar}(x, opt = "dv", labels, apv = FALSE, xfun = NULL,
-  yfun = NULL, subset = NULL, ns = 101, abc = NULL, add = FALSE,
-  nlme = FALSE, returndata = FALSE, ..., xlab = NULL, ylab = NULL,
-  vlab = NULL, xlim = c(NA, NA), ylim = c(NA, NA), vlim = c(NA, NA),
-  legend = list(x = "topleft", inset = 0.04, bty = "o"))
+  yfun = NULL, subset = NULL, ns = 101, abc = NULL, trim = 0,
+  add = FALSE, nlme = FALSE, returndata = FALSE, ..., xlab = NULL,
+  ylab = NULL, vlab = NULL, xlim = c(NA, NA), ylim = c(NA, NA),
+  vlim = c(NA, NA), legend = list(x = "topleft", inset = 0.04, bty =
+  "o"))
 
 \method{lines}{sitar}(x, ...)
 
@@ -68,7 +61,8 @@ at peak velocity from the velocity curve. If TRUE, age at peak velocity is
 calculated as the age when the second derivative of the fitted curve changes
 sign (after applying \code{xfun} and/or \code{yfun}). Age at peak velocity
 is marked in the plot with a vertical dotted line, and its value, along with
-peak velocity, is printed and returned.}
+peak velocity, is printed and returned. NB their standard errors can be
+obtained using the bootstrap with the function \code{apv_se}.}
 
 \item{xfun}{optional function to be applied to the x variable prior to
 plotting. Defaults to NULL, which translates to \code{ifun(x$call.sitar$x)}
@@ -93,6 +87,9 @@ single character string defining an \code{id} level whose random effect
 values are used. If \code{abc} is set, \code{level} is ignored. If
 \code{abc} is NULL (default), or if a, b or c values are missing, values of
 zero are assumed.}
+
+\item{trim}{number (default 0) of long line segments to be excluded from plot
+with option 'u' or 'a'. See Details.}
 
 \item{add}{optional logical defining if the plot is pre-existing (TRUE) or
 new (FALSE). TRUE is equivalent to using \code{lines}.}
@@ -128,7 +125,7 @@ If \code{returndata} is FALSE returns invisibly a list of (up to) three objects:
 \item{usr2}{the value of \code{par('usr')} for the velocity (y2) plot.}
 \item{apv}{if argument \code{apv} is TRUE a named list giving the age at
 peak velocity (apv) and peak velocity (pv) from the fitted velocity curve,
-either overall or (with options D or V) for all subjects.}
+either overall or (with options D or V, invisibly) for all subjects.}
 If \code{returndata} is TRUE (which it is with the helper functions) returns
 invisibly either a tibble or named list of tibbles,
 containing the data to be plotted. The helper functions each return a tibble.
@@ -152,6 +149,12 @@ The helper functions \code{plot_d}, \code{plot_v}, \code{plot_D},
 \code{plot_V}, \code{plot_u}, \code{plot_a} and \code{plot_c}
 correspond to the seven plot \code{option}s defined by their last letter,
 and return the data for plotting, e.g. for use with \code{ggplot2}.
+
+The \code{trim} option allows unsightly long line segments to be omitted
+from plots with options 'a' or 'u'. It ranks the line segments on the basis
+of the age gap (dx) and the distance of the midpoint of the line from the
+mean curve (dy) using the formula \code{abs(dx)/mad(dx) + abs(dy)/mad(dy)}
+and omits those with the largest values.
 }
 \examples{
 
@@ -160,9 +163,13 @@ m1 <- sitar(x=age, y=height, id=id, data=heights, df=4)
 
 ## draw fitted distance and velocity curves
 ## with velocity curve in blue
-## adding age at peak velocity
+## adding age at peak velocity (apv)
 plot(m1, y2par=list(col='blue'), apv=TRUE)
 
+## bootstrap standard errors for apv and pv
+\dontrun{
+res <- apv_se(m1, nboot=20, plot=TRUE)
+}
 ## draw individually coloured growth curves adjusted for random effects
 ## using same x-axis limits as for previous plot
 plot(m1, opt='a', col=id, xlim=xaxsd())
@@ -183,7 +190,7 @@ geom_line(show.legend=FALSE)
 }
 \seealso{
 \code{\link{mplot}},
-\code{\link{plotclean}}, \code{\link{ifun}}
+\code{\link{plotclean}}, \code{\link{ifun}}, \code{\link{apv_se}}
 }
 \author{
 Tim Cole \email{tim.cole@ucl.ac.uk}

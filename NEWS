@@ -1,3 +1,32 @@
+Changes in Version 1.1.1
+
+  o trim (new) option in plot.sitar to remove unsightly long lines from plots.
+
+  o For trim to work, mplot now allows rows with missing data.
+
+  o apv_se (new) bootstraps standard errors for peak velocity (pv) and age at pv.
+
+  o getPeakTrough now uses xy.coords and returns NA if no turning points.
+
+  o Fix several bugs in plot.sitar, involving subset with predict, dashed line
+    for velocity, and axis 4 etc.
+
+  o BREAKING CHANGE - options 'dv' with subset in plot.sitar now work as they
+    should, showing mean curves for the subset selected.
+
+  o predict.sitar improved so individual velocity curves (option V) now plot
+    correctly when y and/or t are transformed.
+
+  o Fix bugs in xyadj improving the defaults for y and id, and making abc a
+    data frame and adding missing columns.
+
+  o msMaxIter default in nlmeControl doubled to 100.
+
+  o getData.sitar now based on getData.nlme not getData.lme.
+
+  o LMS2z now requires 'measure' to be character, changing example accordingly.
+    Also the specification of the sex argument has been improved and extended.
+
 Changes in Version 1.1.0
 
   o plot.sitar now allows data output for plotting in ggplot2 etc.

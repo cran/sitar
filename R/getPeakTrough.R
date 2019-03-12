@@ -7,7 +7,8 @@
 #' @param y vector.
 #' @param peak logical determining whether peak or trough is returned.
 #' @return A length-2 vector containing the values of \code{x} and  \code{y}
-#' at the peak or trough. If no peak/trough is identified NULL is returned invisibly.
+#' at the peak or trough. If no peak/trough is identified \code{x} and  \code{y}
+#' are set to NA.
 #' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
 #' @examples
 #' ## create mean height velocity curve
@@ -23,9 +24,9 @@
 #' points(t(getPeakTrough(x, y)), pch=17)
 #' points(t(getPeakTrough(x, y, peak=FALSE)), pch=25)
 #' @export getPeakTrough
-	getPeakTrough <- function(x, y, peak=TRUE) {
+	getPeakTrough <- function(x, y=NULL, peak=TRUE) {
 #	returns values of x and y at peak/trough, i.e. where dy/dx=0
-	. <- unique(data.frame(x, y)[order(x), ])
+	. <- xy.coords(x, y)
 	x <- .$x
 	y <- .$y
   . <- ifelse(peak, -1, 1)
@@ -40,7 +41,7 @@
 		. <- lm(y ~ poly(x, 2, raw=TRUE)) # quadratic in x
 		x <- - .$coef[2] / .$coef[3] / 2 # x at tp
 		y <- predict(., data.frame(x=x)) # y at tp
-		setNames(c(x, y), c('x', 'y'))
 	} else
-	  invisible(NULL)
+	  x <- y <- NA
+	setNames(c(x, y), c('x', 'y'))
 }
