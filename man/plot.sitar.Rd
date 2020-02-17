@@ -12,12 +12,29 @@
 \alias{plot_c}
 \title{Plot SITAR model}
 \usage{
-\method{plot}{sitar}(x, opt = "dv", labels, apv = FALSE, xfun = NULL,
-  yfun = NULL, subset = NULL, ns = 101, abc = NULL, trim = 0,
-  add = FALSE, nlme = FALSE, returndata = FALSE, ..., xlab = NULL,
-  ylab = NULL, vlab = NULL, xlim = c(NA, NA), ylim = c(NA, NA),
-  vlim = c(NA, NA), legend = list(x = "topleft", inset = 0.04, bty =
-  "o"))
+\method{plot}{sitar}(
+  x,
+  opt = "dv",
+  labels,
+  apv = FALSE,
+  xfun = I,
+  yfun = I,
+  subset = NULL,
+  ns = 101,
+  abc = NULL,
+  trim = 0,
+  add = FALSE,
+  nlme = FALSE,
+  returndata = FALSE,
+  ...,
+  xlab = NULL,
+  ylab = NULL,
+  vlab = NULL,
+  xlim = c(NA, NA),
+  ylim = c(NA, NA),
+  vlim = c(NA, NA),
+  legend = list(x = "topleft", inset = 0.04, bty = "o")
+)
 
 \method{lines}{sitar}(x, ...)
 
@@ -65,14 +82,10 @@ peak velocity, is printed and returned. NB their standard errors can be
 obtained using the bootstrap with the function \code{apv_se}.}
 
 \item{xfun}{optional function to be applied to the x variable prior to
-plotting. Defaults to NULL, which translates to \code{ifun(x$call.sitar$x)}
-and inverts any transformation applied to x in the original SITAR model
-call. To plot on the transformed scale set \code{xfun} to \code{I}.}
+plotting (default I, see Details).}
 
 \item{yfun}{optional function to be applied to the y variable prior to
-plotting. Defaults to NULL, which translates to \code{ifun(x$call.sitar$y)}
-and inverts any transformation applied to y in the original SITAR model
-call. To plot on the transformed scale set \code{yfun} to \code{I}.}
+plotting (default I, see Details).}
 
 \item{subset}{optional logical vector of length \code{x} defining a subset
 of \code{data} rows to be plotted, for \code{x} and \code{data} in the
@@ -98,7 +111,7 @@ new (FALSE). TRUE is equivalent to using \code{lines}.}
 \code{nlme} object, using \code{plot.nlme} arguments.}
 
 \item{returndata}{logical defining whether to plot the data (default FALSE)
-or just return the data for plotting (TRUE).}
+or just return the data for plotting (TRUE). See Value.}
 
 \item{\dots}{Further graphical parameters (see \code{par}) may also be
 supplied as arguments, e.g. line
@@ -131,8 +144,8 @@ invisibly either a tibble or named list of tibbles,
 containing the data to be plotted. The helper functions each return a tibble.
 The variable names are '.x', '.y' and
 (for curves grouped by subject) '.id'. Note that '.x' and '.y' are returned
-after applying \code{xfun} and \code{yfun}. Hence if for examplex \code{x = log(age)}
-in the original \code{sitar} call then '.x' corresponds by default to \code{age}.
+after applying \code{xfun} and \code{yfun}. Hence if for example \code{x = log(age)}
+in the SITAR call then '.x' corresponds by default to \code{age}.
 }
 \description{
 \code{plot} and \code{lines} methods for objects of class \code{sitar},
@@ -145,10 +158,18 @@ For options involving both distance curves (options 'dcDua') and velocity curves
 \code{par} parameters given as a named list called \code{y2par}.
 To suppress the legend that comes with it set \code{legend = NULL}.
 
+The transformations \code{xfun} and \code{yfun} are applied to the x and y
+variables after inverting any transformations applied in the original SITAR
+call. So for example if \code{y = log(height)} in the SITAR call, then \code{yfun}
+is applied to \code{height}. Thus the default \code{yfun = I} has the effect of
+inverting the transformation. This is achieved by setting
+\code{yfun = yfun(ifun(x$call.sitar$y))}.
+For no transformation set \code{yfun = NULL}.
+
 The helper functions \code{plot_d}, \code{plot_v}, \code{plot_D},
 \code{plot_V}, \code{plot_u}, \code{plot_a} and \code{plot_c}
 correspond to the seven plot \code{option}s defined by their last letter,
-and return the data for plotting, e.g. for use with \code{ggplot2}.
+and return the data for plotting as a \code{tibble}, e.g. for use with \code{ggplot2}.
 
 The \code{trim} option allows unsightly long line segments to be omitted
 from plots with options 'a' or 'u'. It ranks the line segments on the basis

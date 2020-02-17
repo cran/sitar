@@ -2,9 +2,18 @@
 % Please edit documentation in R/getPeakTrough.R
 \name{getPeakTrough}
 \alias{getPeakTrough}
-\title{Identify peaks and troughs of curve}
+\alias{getPeak}
+\alias{getTrough}
+\alias{getTakeoff}
+\title{Identify peak or trough on curve}
 \usage{
-getPeakTrough(x, y = NULL, peak = TRUE)
+getPeakTrough(x, y = NULL, peak = TRUE, takeoff = FALSE)
+
+getPeak(x, y = NULL, peak = TRUE, takeoff = FALSE)
+
+getTrough(x, y = NULL, peak = FALSE, takeoff = FALSE)
+
+getTakeoff(x, y = NULL, peak = FALSE, takeoff = TRUE)
 }
 \arguments{
 \item{x}{vector.}
@@ -12,29 +21,34 @@ getPeakTrough(x, y = NULL, peak = TRUE)
 \item{y}{vector.}
 
 \item{peak}{logical determining whether peak or trough is returned.}
+
+\item{takeoff}{logical determining whether, if \code{peak} is FALSE, the
+trough is takeoff.}
 }
 \value{
-A length-2 vector containing the values of \code{x} and  \code{y}
-at the peak or trough. If no peak/trough is identified \code{x} and  \code{y}
-are set to NA.
+A length-2 vector containing the values of \code{x} and \code{y} at
+the peak or trough. If none are identified NA's are returned.
 }
 \description{
-Given vectors \code{x} and  \code{y}, returns their values at the peak or
-trough of the curve, where dy/dx = 0.
+Given vectors \code{x} and \code{y}, returns their values at the peak or
+trough of the smooth (e.g. cubic spline) curve \code{y ~ x}.
+}
+\details{
+Optionally the trough can be specified as takeoff, which is defined
+for a growth velocity curve as the lowest velocity before the pubertal peak,
+and if there is no peak then there is by definition no takeoff.
 }
 \examples{
 ## create mean height velocity curve
 data(heights)
 m1 <- sitar(age, height, id, heights, 4)
-x <- getCovariate(m1)
-y <- fitted(m1, level=0)
-y <- predict(smooth.spline(x, y), x, deriv=1)$y
-
-## and plot it
-. <- order(x)
-plot(y[.] ~ x[.], type='l', xlab='age', ylab='height')
-points(t(getPeakTrough(x, y)), pch=17)
-points(t(getPeakTrough(x, y, peak=FALSE)), pch=25)
+## plot velocity curve
+plot(m1, 'v')
+## mark peak, trough and takeoff
+xy <- plot_v(m1)
+points(t(getPeak(xy)), pch=17)
+points(t(getTrough(xy)), pch=25, col=2, bg=2)
+points(t(getTakeoff(xy)), pch=25, col=3, bg=3)
 }
 \author{
 Tim Cole \email{tim.cole@ucl.ac.uk}

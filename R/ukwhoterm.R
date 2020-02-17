@@ -1,16 +1,15 @@
-#' UK-WHO growth reference including preterm
+#' UK-WHO growth reference omitting preterm data
 #'
 #' The UK-WHO growth reference for height, weight, BMI and head circumference
 #' (see Wright et al 2010), fitted by the LMS method and summarised by values of
-#' L, M and S by sex from 26 weeks gestation to 20 years.
+#' L, M and S by sex and postnatal age from term birth (see Details) to 20 years.
 #'
-#' The growth reference combines the birth section of the British 1990 growth
-#' reference (Cole et al 2011) from 26 to 42 weeks gestation, the WHO growth
-#' standard from 2 postnatal weeks to 4 years, and the British 1990 reference
-#' from 4 to 20 years.
+#' The growth reference combines term birth data from the British 1990 growth
+#' reference (Cole et al 2011), the WHO growth standard from 2 postnatal weeks
+#' to 4 years, and the British 1990 reference from 4 to 20 years.
 #'
-#' Age is measured in years, where 40 weeks gestation is 0 years. The conversion
-#' from weeks gestation to years is:
+#' Age is measured in years, and term birth corresponds to ages between 37 and
+#' 42 weeks gestation, where 40 weeks gestation is 0 years. The conversion is:
 #' \code{years = (weeks - 40) * 7 / 365.25}.
 #'
 #' The L, M and S values for each measurement correspond respectively to the
@@ -19,14 +18,11 @@
 #' \code{\link{LMS2z}}) are as follows: height (ht, cm), weight (wt, kg),
 #' BMI (bmi, kg/m2) and head circumference (head, cm).
 #'
-#' @name ukwhopt
+#' @name ukwhoterm
 #' @docType data
-#' @format A tibble with 542 observations on the following 17 variables:
+#' @format A tibble with 512 observations on the following 15 variables:
 #' \describe{
-#' \item{age_wm}{numeric vector - age in weeks or months - see \code{wm}}
-#' \item{wm}{three-level factor indicating weeks or months: wkga = gestational
-#' weeks, wk = postnatal weeks, mth = postnatal months}
-#' \item{years}{numeric vector - age in years}
+#' \item{years}{numeric vector - postnatal age in years}
 #' \item{L.ht}{numeric vector}
 #' \item{M.ht}{numeric vector}
 #' \item{S.ht}{numeric vector}
@@ -56,9 +52,9 @@
 #' \url{http://www.healthforallchildren.com/?product_cat=software}.
 #' @keywords datasets
 #' @examples
-#' data(ukwhopt)
-#' ## calculate median birth weight (kg) in girls from 26 to 44 weeks gestation
-#' v <- LMS2z(x = (26:44-40) * 7 / 365.25, y = 0, sex = 2, measure = 'wt',
-#'   ref = 'ukwhopt', toz = FALSE)
-#' setNames(v, 26:44)
-"ukwhopt"
+#' data(ukwhoterm)
+#' ## calculate median weight (kg) in girls from 0 to 10 years
+#' v <- LMS2z(x = 0:10, y = 0, sex = 2, measure = 'wt',
+#'   ref = 'ukwhoterm', toz = FALSE)
+#' setNames(v, 0:10)
+"ukwhoterm"

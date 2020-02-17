@@ -9,10 +9,18 @@
 #' \code{par} parameters given as a named list called \code{y2par}.
 #' To suppress the legend that comes with it set \code{legend = NULL}.
 #'
+#' The transformations \code{xfun} and \code{yfun} are applied to the x and y
+#' variables after inverting any transformations applied in the original SITAR
+#' call. So for example if \code{y = log(height)} in the SITAR call, then \code{yfun}
+#' is applied to \code{height}. Thus the default \code{yfun = I} has the effect of
+#' inverting the transformation. This is achieved by setting
+#' \code{yfun = yfun(ifun(x$call.sitar$y))}.
+#' For no transformation set \code{yfun = NULL}.
+#'
 #' The helper functions \code{plot_d}, \code{plot_v}, \code{plot_D},
 #' \code{plot_V}, \code{plot_u}, \code{plot_a} and \code{plot_c}
 #' correspond to the seven plot \code{option}s defined by their last letter,
-#' and return the data for plotting, e.g. for use with \code{ggplot2}.
+#' and return the data for plotting as a \code{tibble}, e.g. for use with \code{ggplot2}.
 #'
 #' The \code{trim} option allows unsightly long line segments to be omitted
 #' from plots with options 'a' or 'u'. It ranks the line segments on the basis
@@ -47,13 +55,9 @@
 #' peak velocity, is printed and returned. NB their standard errors can be
 #' obtained using the bootstrap with the function \code{apv_se}.
 #' @param xfun optional function to be applied to the x variable prior to
-#' plotting. Defaults to NULL, which translates to \code{ifun(x$call.sitar$x)}
-#' and inverts any transformation applied to x in the original SITAR model
-#' call. To plot on the transformed scale set \code{xfun} to \code{I}.
+#' plotting (default I, see Details).
 #' @param yfun optional function to be applied to the y variable prior to
-#' plotting. Defaults to NULL, which translates to \code{ifun(x$call.sitar$y)}
-#' and inverts any transformation applied to y in the original SITAR model
-#' call. To plot on the transformed scale set \code{yfun} to \code{I}.
+#' plotting (default I, see Details).
 #' @param subset optional logical vector of length \code{x} defining a subset
 #' of \code{data} rows to be plotted, for \code{x} and \code{data} in the
 #' original \code{sitar} call.
@@ -72,7 +76,7 @@
 #' @param nlme optional logical which set TRUE plots the model as an
 #' \code{nlme} object, using \code{plot.nlme} arguments.
 #' @param returndata logical defining whether to plot the data (default FALSE)
-#' or just return the data for plotting (TRUE).
+#' or just return the data for plotting (TRUE). See Value.
 #' @param \dots Further graphical parameters (see \code{par}) may also be
 #' supplied as arguments, e.g. line
 #' type \code{lty}, line width \code{lwd}, and colour \code{col}. For the
@@ -95,8 +99,8 @@
 #' containing the data to be plotted. The helper functions each return a tibble.
 #' The variable names are '.x', '.y' and
 #' (for curves grouped by subject) '.id'. Note that '.x' and '.y' are returned
-#' after applying \code{xfun} and \code{yfun}. Hence if for examplex \code{x = log(age)}
-#' in the original \code{sitar} call then '.x' corresponds by default to \code{age}.
+#' after applying \code{xfun} and \code{yfun}. Hence if for example \code{x = log(age)}
+#' in the SITAR call then '.x' corresponds by default to \code{age}.
 #' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
 #' @seealso \code{\link{mplot}},
 #' \code{\link{plotclean}}, \code{\link{ifun}}, \code{\link{apv_se}}
@@ -141,7 +145,7 @@
 #' @importFrom rlang .data as_label
 #' @importFrom glue glue
 #' @export
-plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, subset=NULL,
+plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=I, yfun=I, subset=NULL,
                        ns=101, abc=NULL, trim=0, add=FALSE, nlme=FALSE,
                        returndata=FALSE, ...,
                        xlab=NULL, ylab=NULL, vlab=NULL,
@@ -327,6 +331,31 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
     do.call('legend', c(legend, list(lty=llc[, 'lty'], lwd=llc[, 'lwd'], col=llc[, 'col'])))
   }
 
+  getlab <- function(lab, label, call, fun) {
+    if (!is.null(lab))
+      return(lab)
+    if (label != '' && !is.na(label) && !is.null(label))
+      return(label)
+    if (fun == 'velocity')
+      return(paste(call, 'velocity'))
+    if (fun == 'NULL')
+      return(deparse(call))
+    icall <- ifun(call)
+    lab <- attr(icall, 'varname')
+    if (fun == 'I')
+      return(lab)
+    labfun <- ifelse(grepl('\\(', fun), paste0('(', fun, ')'), fun)
+    paste0(labfun, '(', lab, ')')
+  }
+
+  getfun <- function(fun, call) {
+    if (is.null(fun))
+      return(function(x) x)
+    function(x) fun(ifun(call)(x))
+  }
+
+# main code ---------------------------------------------------------------
+
   if (nlme)
     do.call('plot.lme', as.list(match.call()[-1]))
   model <- x
@@ -360,49 +389,15 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
 # create missing labels
   if (missing(labels))
     labels <- vector('character', 3)
-  else if (length(labels) < 3)
-    labels <- c(labels, '', '')
-  if (labels[3] == '' && labels[2] != '')
-    labels[3] <- paste(labels[2], 'velocity')
 
-#	if xlab not specified replace with label or x name (depending on xfun)
-  if (is.null(xlab)) {
-    if (labels[1] == '') {
-      xlab <- if (!is.null(xfun))
-        paste0('(', deparse(substitute(xfun)), ')(', deparse(mcall$x), ")")
-      else
-        attr(ifun(mcall$x), 'varname')
-      labels[1] <- xlab
-    }
-    else
-      xlab <- labels[1]
-  }
+#	get axis labels
+  xlab <- getlab(xlab, labels[1], mcall$x, paste(deparse(substitute(xfun)), collapse=''))
+  ylab <- getlab(ylab, labels[2], mcall$y, paste(deparse(substitute(yfun)), collapse=''))
+  vlab <- getlab(vlab, labels[3], ylab, 'velocity')
 
-#	if ylab not specified replace with label or y name (depending on yfun)
-  if (is.null(ylab)) {
-    if (labels[2] == '') {
-      ylab <- if (!is.null(yfun))
-        paste0('(', deparse(substitute(yfun)), ')(', deparse(mcall$y), ")")
-      else
-        attr(ifun(mcall$y), 'varname')
-      labels[2] <- ylab
-    }
-    else
-      ylab <- labels[2]
-  }
-
-#	if vlab not specified replace with label or v name
-  if (is.null(vlab)) {
-    if (labels[3] == '')
-      labels[3] <- paste(labels[2], 'velocity')
-    vlab <- labels[3]
-  }
-
-# derive xfun and yfun
-  if (is.null(xfun))
-    xfun <- ifun(mcall$x)
-  if (is.null(yfun))
-    yfun <- ifun(mcall$y)
+# get xfun and yfun
+  xfun <- getfun(xfun, mcall$x)
+  yfun <- getfun(yfun, mcall$y)
 
 # generate list of data frames for selected options
   data <- lapply(opts, function(i) {
@@ -434,7 +429,7 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
                           xlim=xlim, ylim=ylim, vlim=vlim), ARG))
 # add legend
     if (dv == 3 && !is.null(legend)) {
-      legend[['legend']] <- labels[2:3]
+      legend[['legend']] <- c(ylab, vlab)
       dolegend(ARG[names(ARG) != 'y2par'], ARG$y2par, legend)
     }
   }
@@ -482,7 +477,7 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
   if (apv) {
 # single curve
       xy$apv <- with(velocity(model, subset=subset, abc=abc, xfun=xfun, yfun=yfun, ns=ns),
-                     setNames(getPeakTrough(.x, .y), c('apv', 'pv')))
+                     setNames(getPeak(.x, .y), c('apv', 'pv')))
     print(signif(xy$apv, 4))
     if (any(optmult[opts])) {
 # multiple curves
@@ -503,7 +498,7 @@ plot.sitar <- function(x, opt="dv", labels, apv=FALSE, xfun=NULL, yfun=NULL, sub
         . <- vapply(ids, function(z) {
           newdata$.id <- z
           vt <- predict(object=model, newdata=newdata, deriv=1, abc=abc, xfun=xfun, yfun=yfun)
-          getPeakTrough(xfun(xt), vt)
+          getPeak(xfun(xt), vt)
         }, numeric(2))
         xy$apv <- setNames(data.frame(t(.)), c('apv', 'pv'))
       }

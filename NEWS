@@ -1,3 +1,35 @@
+Changes in Version 1.1.2
+
+  o The uscdc2000 and iotf datasets are added.
+
+  o The who0607 dataset is added, extending who06 to age 19 for height, weight
+    and BMI.
+
+  o The ukwhoterm dataset is added, similar to ukwhopt but excluding infants
+    born preterm.
+
+  o The ukwhopt dataset is extended to cover age 26 weeks gestation to 20 years.
+
+  o apv_se is updated to work with the latest version of rtidy.
+
+  o LMS2z is extended to handle disjunct references, where the centiles have a
+    break or disjunction. Sex is also checked for more carefully.
+
+  o sitar has a new argument pdDiag, which forces the random effects covariance
+    matrix to be diagonal. Convergence can be much quicker, though the model may
+    fit less well.
+
+  o pdLMS density calculation corrected.
+
+  o In plot.sitar transformations of x / y using xfun / yfun are now applied
+    after back-transforming x / y to their original scales.
+
+  o getPeakTrough algorithm improved, and takeoff argument added for use with
+    velocity curves to identify age at takeoff.
+
+  o Methods getPeak, getTrough and getTakeoff are added as special cases of
+    getPeakTrough.
+
 Changes in Version 1.1.1
 
   o trim (new) option in plot.sitar to remove unsightly long lines from plots.

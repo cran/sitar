@@ -5,12 +5,32 @@
 \alias{update.sitar}
 \title{Fit SITAR growth curve model}
 \usage{
-sitar(x, y, id, data, df, knots, fixed = random, random = "a+b+c",
-  a.formula = ~1, b.formula = ~1, c.formula = ~1, bounds = 0.04,
-  start, xoffset = "mean", bstart = xoffset, returndata = FALSE,
-  verbose = FALSE, correlation = NULL, weights = NULL,
-  subset = NULL, method = "ML", na.action = na.fail,
-  control = nlmeControl(msMaxIter = 100, returnObject = TRUE))
+sitar(
+  x,
+  y,
+  id,
+  data,
+  df,
+  knots,
+  fixed = random,
+  random = "a+b+c",
+  pdDiag = FALSE,
+  a.formula = ~1,
+  b.formula = ~1,
+  c.formula = ~1,
+  bounds = 0.04,
+  start,
+  xoffset = "mean",
+  bstart = xoffset,
+  returndata = FALSE,
+  verbose = FALSE,
+  correlation = NULL,
+  weights = NULL,
+  subset = NULL,
+  method = "ML",
+  na.action = na.fail,
+  control = nlmeControl(msMaxIter = 100, returnObject = TRUE)
+)
 
 \method{update}{sitar}(object, ..., evaluate = TRUE)
 }
@@ -24,16 +44,20 @@ sitar(x, y, id, data, df, knots, fixed = random, random = "a+b+c",
 \item{data}{data frame containing variables \code{x}, \code{y} and
 \code{id}.}
 
-\item{df}{degrees of freedom for cubic regression spline (2 or more).}
+\item{df}{degrees of freedom for cubic regression spline (1 or more).}
 
 \item{knots}{vector of values for knots (default \code{df} quantiles of
 \code{x} distribution).}
 
 \item{fixed}{character string specifying a, b, c fixed effects (default
-\code{random}).}
+\code{random} or the subset of "a+b+c" within \code{random}).}
 
 \item{random}{character string specifying a, b, c random effects (default
-\code{"a+b+c"}).}
+\code{"a+b+c"}). Alternatively \code{nlme} formula e.g.
+\code{"list(id = pdDiag(a+b+c ~ 1))"}.}
+
+\item{pdDiag}{logical which if TRUE fits a diagonal random effects
+covariance matrix, or if FALSE (default) a general covariance matrix.}
 
 \item{a.formula}{formula for fixed effect a (default \code{~ 1}).}
 

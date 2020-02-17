@@ -3,20 +3,21 @@
 #' \code{apv_se} bootstraps a SITAR model to generate standard errors for
 #' age at peak velocity (apv) and peak velocity (pv).
 #'
-#' The mean velocity curve to be bootstrapped can be modified with
-#' arguments \code{subset}, \code{abc}, \code{xfun}, \code{yfun} or \code{ns}.
-#'
 #' If \code{plot} is TRUE, the original velocity curve is plotted along with
 #' each bootstrap sample's pv versus apv.
 #'
 #' @param object SITAR model.
+#' @param fun function to extract apv and pv from velocity curve (default getPeak),
+#' alternative getTakeoff or getTrough.
 #' @param nboot number of bootstrap samples (default 10).
 #' @param seed integer to initialize the random number generator (default NULL).
 #' @param plot logical to control plotting (default FALSE).
-#' @param \dots optional arguments defining the velocity
-#' curve to be bootstrapped, and the plot. See Details.
-#' @return a 2x2 array giving the mean and se of apv and pv, with attribute "bs"
-#' a tibble containing the bootstrap estimates of apv and pv, with NAs removed.
+#' @param \dots optional arguments defining the velocity curve to be bootstrapped
+#' (\code{plot.sitar} arguments \code{xfun}, \code{yfun}, \code{subset}, \code{ns}
+#' or \code{abc}), and graphical \code{par} parameters.
+#' @return a 2x2 array giving the mean and standard error of apv and pv, with
+#' attribute "bs" a tibble containing the bootstrap estimates of apv and pv,
+#' with NAs removed.
 #' @author Tim Cole \email{tim.cole@@ucl.ac.uk}
 #' @examples
 #' data(heights)
@@ -25,54 +26,69 @@
 #'
 #' ## bootstrap standard errors for age at peak velocity and peak velocity
 #' output <- apv_se(model, nboot=3, seed=111, plot=TRUE)
-#' @importFrom dplyr %>%
+#' @importFrom dplyr %>% everything
 #' @importFrom tibble tibble as_tibble
-#' @importFrom tidyr nest unnest
-#' @importFrom rsample bootstraps
-#' @importFrom purrr map
-#' @importFrom rlang enquo
+#' @importFrom tidyr drop_na nest unnest
+#' @importFrom rsample analysis bootstraps
+#' @importFrom purrr map map_dfr
+#' @importFrom rlang .data
 #' @export
-apv_se <- function(object, nboot=10, seed=NULL, plot=FALSE, ...) {
-  id <- object$call.sitar$id
-  id <- enquo(id)
+apv_se <- function(object,
+                   fun = getPeak,
+                   nboot = 10,
+                   seed = NULL,
+                   plot = FALSE,
+                   ...) {
+  # get data frame and object id
+  df <- getData(object)
+  id <- as.character(object$call.sitar$id)
 
-  set.seed(seed)
-  bs <- getData(object) %>% # generate bootstrap splits
-    nest(-!!id) %>%
-    bootstraps(times=nboot)
-  df <- map(bs$splits, ~as_tibble(.) %>% # generate bootstrap samples
-              unnest(.id='.newid'))
-
+  # get args
   dots <- eval(substitute(alist(...)))
-  edots <- lapply(dots, eval, getData(object))
-  vel <- do.call('plot', c(list(x=object, opt='v', returndata=TRUE), edots))
-  peak <- getPeakTrough(vel)
+  edots <- lapply(dots, eval, df)
 
-  run_sitar <- quote(update(object, data=.df, id=.newid, start=fixef(object)))
-
-  apv <- na.omit(as_tibble(t(vapply(df, function(z) { # fit sitar and extract apv and pv
-    eval(parse(text=".df <<- z"))
-    obj <- try(eval(run_sitar))
+  # function to process bootstrap samples
+  fit_sitar_on_bootstrap <- function(split) {
+    .x <- analysis(split) %>%
+      unnest(cols = c(.data$data))
+    eval(parse(text = ".x <<- .x"))
+    obj <- try(update(object, data = .x, start = fixef(object)))
     if (any(class(obj) %in% 'sitar')) {
-      edots <- lapply(dots, eval, getData(obj))
-      vel <- do.call('plot', c(list(x=obj, opt='v', returndata=TRUE), edots))
-      getPeakTrough(vel)
+      vel <- do.call('plot_v', c(list(x = obj), edots))
+      fun(vel)
     } else
       c(NA, NA)
-  }, vector('numeric', 2)))))
+  }
 
+  set.seed(seed)
+
+  df <- df %>%
+    # generate bootstrap splits
+    nest(data = -id) %>%
+    bootstraps(times = nboot) %>%
+    # generate bootstrap samples
+    mutate(model = map(.data$splits, fit_sitar_on_bootstrap))
+
+  # extract apv and pv
+  apv <- map_dfr(df$model, ~ as_tibble(t(.x))) %>%
+    drop_na()
+
+  vel <- do.call('plot_v', c(list(x = object), edots))
+  peak <- fun(vel)
   names(apv) <- names(vel) <- names(peak) <- c('apv', 'pv')
 
   if (plot) {
-    localplot <- function(..., subset, abc, xfun, yfun, ns) plot(...)
+    localplot <- function(..., subset, abc, xfun, yfun, ns)
+      plot(...)
     xy <- rbind(vel, apv)
-    ARG <- setNames(lapply(xy, range), c('xlim', 'ylim')) # default plot
-    do.call('localplot', c(list(x=apv), ARG, edots)) # plot apv and pv
-    lines(vel, lwd=2) # add velocity curve
-    abline(v=peak[1], h=peak[2], lty=3)
+    ARG <-
+      setNames(lapply(xy, range, na.rm = TRUE), c('xlim', 'ylim')) # default plot
+    do.call('localplot', c(list(x = apv), ARG, edots)) # plot apv and pv
+    lines(vel, lwd = 2) # add velocity curve
+    abline(v = peak[1], h = peak[2], lty = 3)
   }
 
-  se <- vapply(apv, sd, 1.0)
+  se <- vapply(apv, sd, na.rm = TRUE, 1.0)
   output <- rbind(peak, se)
   attr(output, 'bs') <- apv
   return(output)
