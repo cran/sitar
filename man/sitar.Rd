@@ -12,12 +12,13 @@ sitar(
   data,
   df,
   knots,
-  fixed = random,
-  random = "a+b+c",
+  fixed = NULL,
+  random = "a + b + c",
   pdDiag = FALSE,
   a.formula = ~1,
   b.formula = ~1,
   c.formula = ~1,
+  d.formula = ~1,
   bounds = 0.04,
   start,
   xoffset = "mean",
@@ -44,17 +45,17 @@ sitar(
 \item{data}{data frame containing variables \code{x}, \code{y} and
 \code{id}.}
 
-\item{df}{degrees of freedom for cubic regression spline (1 or more).}
+\item{df}{degrees of freedom for cubic regression spline (0 or more, see Details).}
 
 \item{knots}{vector of values for knots (default \code{df} quantiles of
 \code{x} distribution).}
 
-\item{fixed}{character string specifying a, b, c fixed effects (default
-\code{random} or the subset of "a+b+c" within \code{random}).}
+\item{fixed}{character string specifying a, b, c, d fixed effects (default
+\code{random} or the subset of "a + b + c + d" within \code{random}).}
 
-\item{random}{character string specifying a, b, c random effects (default
+\item{random}{character string specifying a, b, c, d random effects (default
 \code{"a+b+c"}). Alternatively \code{nlme} formula e.g.
-\code{"list(id = pdDiag(a+b+c ~ 1))"}.}
+\code{"list(id = pdDiag(a + b + c ~ 1))"}.}
 
 \item{pdDiag}{logical which if TRUE fits a diagonal random effects
 covariance matrix, or if FALSE (default) a general covariance matrix.}
@@ -64,6 +65,8 @@ covariance matrix, or if FALSE (default) a general covariance matrix.}
 \item{b.formula}{formula for fixed effect b (default \code{~ 1}).}
 
 \item{c.formula}{formula for fixed effect c (default \code{~ 1}).}
+
+\item{d.formula}{formula for fixed effect d (default \code{~ 1}).}
 
 \item{bounds}{span of \code{x} for regression spline, or fractional
 extension of range (default 0.04).}
@@ -103,7 +106,7 @@ that should be used in the fit (see \code{\link{nlme}}).}
 \code{\link{nlme}}).}
 
 \item{control}{list of control values for the estimation algorithm (see
-\code{\link{nlme}}) (default {nlmeControl(returnObject=TRUE)}).}
+\code{\link{nlme}}) (default {nlmeControl(returnObject = TRUE)}).}
 
 \item{object}{object of class \code{sitar}.}
 
@@ -120,38 +123,44 @@ nonlinear mixed-effects model fit, with all the components returned by
 \code{nlme} (see \code{\link{nlmeObject}} for a full description) plus the
 following components:
 \item{fitnlme}{the function returning the predicted value of \code{y}.}
+\item{constants}{data frame of mean a-b-c-d values for unique combinations
+of covariates (excluding age).}
 \item{call.sitar}{the internal \code{sitar} call that produced the object.}
 \item{xoffset}{the value of \code{xoffset}.}
 \item{ns}{the \code{lm} object providing starting values for the B-spline curve.}
 
 Generic functions such as \code{print}, \code{plot}, \code{anova} and
 \code{summary} have methods to show the results of the fit. The functions
-\code{resid}, \code{coef}, \code{fitted}, \code{fixed.effects},
+\code{residuals}, \code{coef}, \code{fitted}, \code{fixed.effects},
 \code{random.effects}, \code{predict}, \code{getData}, \code{getGroups},
 \code{getCovariate} and \code{getVarCov} can be used to extract some of its
 components.
-
-Note that versions of \code{sitar} prior to 1.0.4 did not return
-\code{fitnlme}. Both \code{plot} and \code{predict} may require it, in which
-case they \code{update} the SITAR object on the fly, with a message. Also
-version 1.0.5 altered the defaults for \code{xoffset} and \code{bstart}.
-Models fitted with versions prior to 1.0.5 need refitting.
 }
 \description{
 SITAR is a method of growth curve analysis, based on \pkg{nlme}, that
 summarises a set of growth curves with a mean growth curve as a regression
-spline, plus a set of up to three fixed and random effects (a, b and c)
+spline, plus a set of up to four fixed and random effects (a, b, c and d)
 defining how individual growth curves differ from the mean curve.
 }
 \details{
+The SITAR model usually has up to three random effects (a, b and c), termed
+size, timing and intensity respectively. \code{df} sets the degrees of freedom
+for the mean spline curve, taking values from 1 (i.e. linear) upwards. In
+addition there is a random effect for the slope, d, which is fitted when
+\code{df = 0}, and combined with a, it provides the classic random intercept random
+slope model, which is similar to the 1 df spline model. In addition d can be
+fitted, along with a, b and c, to extend
+SITAR to model variability in the adult slope of the growth curve.
+
 \code{xoffset} allows the origin of \code{x} to be varied, while
 \code{bstart} specifies the starting value for \code{b}, both of which can
 affect the model fit and particularly \code{b}. The values of \code{bstart},
 \code{knots} and \code{bounds} are offset by \code{xoffset} for fitting
 purposes, and similarly for fixed effect \code{b}.
 
-The formulae \code{a.formula}, \code{b.formula} and \code{c.formula} can
-include functions and interactions, but \code{\link{make.names}} is used to
+The formulae \code{a.formula}, \code{b.formula}, \code{c.formula} and \code{d.formula}
+allow for cov.names and
+can include functions and interactions. \code{\link{make.names}} is used to
 ensure that the names of the corresponding model terms are valid. The
 modified not the original names need to be specified in \code{predict.sitar}.
 
@@ -167,9 +176,9 @@ data(heights)
 (m1 <- sitar(x=age, y=height, id=id, data=heights, df=5))
 
 ##  relate random effects to age at menarche (with censored values +ve)
-##  both a (size) and b (tempo) are positively associated with age at menarche
+##  both a (size) and b (timing) are positively associated with age at menarche
 amen <- abs(heights$men)
-(m2 <- update(m1, a.form=~amen, b.form=~amen, c.form=~amen))
+(m2 <- update(m1, a.formula = ~amen, b.formula = ~amen, c.formula = ~amen))
 }
 \author{
 Tim Cole \email{tim.cole@ucl.ac.uk}
