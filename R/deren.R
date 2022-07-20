@@ -3,8 +3,8 @@
 #' Age-sex-specific prevalence rates of thinness, overweight and obesity in
 #' Ukraine children based on body mass index and IOTF, WHO and CDC cut-offs.
 #'
-#' Note that the overweight prevalences are for overweight not obesity, i.e. the
-#' prevalence between the overweight and obesity cutoffs.
+#' Note that the overweight prevalences are for overweight excluding obesity,
+#' i.e. the prevalence for BMI between the overweight and obesity cutoffs.
 #'
 #' @name deren
 #' @docType data
@@ -12,6 +12,7 @@
 #'   \describe{
 #'   \item{Age}{postnatal age from 7 to 17 completed years}
 #'   \item{Sex}{two-level factor - Boys and Girls}
+#'   \item{N}{integer - group sample size}
 #'   \item{IOTF18.5}{thinness prevalence based on IOTF reference and 18.5 cutoff}
 #'   \item{WHO-2}{thinness prevalence based on WHO reference and -2 cutoff}
 #'   \item{CDC5}{thinness prevalence based on CDC reference and 5 cutoff}
@@ -41,7 +42,7 @@
 #' Borghi E, Siyam A, Nishida C, Siekmann J. Development of a WHO growth
 #' reference for school-aged children and adolescents. Bulletin of the World
 #' Health Organization 2007; 85: 660-7. Available at:
-#' \url{https://www.who.int/growthref/growthref_who_bull/en/}
+#' \url{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2636412/pdf/07-043497.pdf/}
 #'
 #' The CDC reference for children aged 2-20 years is: Must A, Dallal GE, Dietz
 #' WH. Reference data for obesity: 85th and 95th percentiles of body mass index
@@ -49,13 +50,13 @@
 #' Nutrition 1991; 53: 839-46. Available at:
 #' \url{https://academic.oup.com/ajcn/article/53/4/839/4715058}
 
-#' @source The values are obtained from Table 2 of Deren et al (2020).
+#' @source The values are obtained from Table 2 of Deren et al (2020), recalculated to full accuracy.
 #'   \url{https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0244300}.
 #' @keywords datasets
 #' @examples
 #' ## convert IOTF obesity prevalence to WHO obesity prevalence
 #' ## and compare with true WHO obesity prevalence - boys and girls age 7-17
 #' data(deren)
-#'   ob_convertr(prev = IOTF30, age = Age, sex = Sex, from = 'IOTF30',
-#'     to = 'WHO+2', prev_true = `WHO+2`, data = deren, plot = 'compare')
+#'   ob_convertr(age = Age, sex = Sex, from = 'IOTF 30', to = 'WHO +2',
+#'     pfrom = IOTF30, pto = `WHO+2`, data = deren, plot = 'compare')
 "deren"

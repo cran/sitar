@@ -2,7 +2,7 @@ Type: Package
 Package: sitar
 Title: Super Imposition by Translation and Rotation Growth Curve
         Analysis
-Version: 1.2.0
+Version: 1.3.0
 Authors@R: 
     person(given = "Tim",
            family = "Cole",
@@ -27,9 +27,9 @@ VignetteBuilder: knitr
 Encoding: UTF-8
 LazyData: yes
 LazyLoad: yes
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.0
 NeedsCompilation: no
-Packaged: 2021-04-22 11:45:46 UTC; timcole
+Packaged: 2022-07-20 15:11:56 UTC; timcole
 Author: Tim Cole [aut, cre] (<https://orcid.org/0000-0001-5711-8200>)
 Repository: CRAN
-Date/Publication: 2021-04-22 14:10:02 UTC
+Date/Publication: 2022-07-20 15:40:02 UTC
