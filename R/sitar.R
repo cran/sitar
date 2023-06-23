@@ -169,7 +169,7 @@ sitar <-
 
     # get data
     mcall <- match.call()
-    data <- eval(mcall$data, parent.frame())
+    data <- eval.parent(mcall$data)
     subset <- eval(mcall$subset, data)
     if (!is.null(subset))
       data <- data[subset,]
@@ -181,8 +181,12 @@ sitar <-
         missing(knots))
       stop("either df or knots must be specified")
     if (!missing(df) &&
-        !missing(knots))
-      warning("both df and knots specified - df redefined from knots\n")
+        !missing(knots)) {
+      if (df == 0)
+        knots <- NULL
+      else
+        warning("both df and knots specified - df redefined from knots\n")
+    }
     if (!missing(knots)) {
       if (!identical(range(c(knots, x)), range(x)))
         stop("knots outside x range")
@@ -232,7 +236,11 @@ sitar <-
 
     # default fixed effects
     if (is.null(fixed))
-      fixed <- random
+      # drop d from fixed if fixed missing and d in random and df > 1
+      if (grepl('d', random) && df > 1)
+        fixed <- extract(random, letters[1:3])
+      else
+        fixed <- random
     # if fixed contains ~ drop it
     else if (any(grepl('~', fixed)))
       fixed <- as.character(as.formula(fixed))[-1]
@@ -248,20 +256,17 @@ sitar <-
       spline.lm <- lm(y ~ ns(x, knots = knots, Bound = bounds))
       if (nostart <- missing(start))
         start <- coef(spline.lm)[c(2:(df + 1), 1)]
-    # if df = 1 set fixed to a and random to [ac]
+    # if df = 1 exclude b and d
       if (df == 1) {
-        fixed <- 'a'
+        fixed <- 'a' # s1 = c
         random <- extract(random, letters[c(1, 3)])
       }
-    # drop fixed effect for d
-      fixed <- extract(fixed, letters[1:3])
     } else { # 0 df for spline so fit y ~ x
       ss <- character(0)
       #	if start missing get start values for [ad]
       spline.lm <- lm(y ~ x)
       if (nostart <- missing(start))
         start <- coef(spline.lm)
-      # force fixed and random
       fixed <- 'a + d'
       if (!'random' %in% names(mcall))
         random <- fixed
@@ -371,8 +376,7 @@ sitar <-
     nsc <- cglue(model['c'], ')*exp(', '')
     nsd <- cglue(model['d'], '+(', ')*x')
     ex <- glue('(x{nsb}{nsc})')
-    spline <- glue(cglue(ss, '+drop((cbind(', ')*ns({ex},k=knots,B=bounds))%*%mat)'))
-    mat <- matrix(rep(1, df), ncol = 1)
+    spline <- glue(cglue(ss, '+rowSums((cbind(', ')*ns({ex},k=knots,B=bounds)))'))
 
     # expand fixed and if necessary random
     fixed <- glue('{fixed} ~ 1')
@@ -492,7 +496,15 @@ update.sitar <- function (object, ..., evaluate = TRUE)
   }
   # update args
   mcall[names(extras)] <- extras
-  #	add start arg if none of these args specified
+  # check if mean curve is/was a spline with 2+ df
+  fo <- fixef(object)
+  ro <- ranef(object)
+  spline2 <- !is.na(fo['s2']) && (is.null(extras$df) || eval.parent(extras$df) >= 2)
+  # if df = 0 drop knots & bounds
+  if (!is.null(mcall$df) && eval.parent(mcall$df) == 0) {
+    mcall$knots <- mcall$bounds <- NULL
+  }
+  #	add start arg if none of these args specified and is/was spline curve with 2+ df
   if (!sum(pmatch(
     names(extras),
     c(
@@ -509,8 +521,8 @@ update.sitar <- function (object, ..., evaluate = TRUE)
       "returndata"
     ),
     0
-  ))) {
-    start. <- list(fixed = fixef(object), random = ranef(object))
+  )) && spline2) {
+    start. <- list(fixed = fo, random = ro)
     # update start if any of these args specified
     if (sum(pmatch(
       names(extras),
@@ -527,7 +539,7 @@ update.sitar <- function (object, ..., evaluate = TRUE)
     ))) {
       # get data etc
       if (any(c('data', 'subset') %in% names(extras))) {
-        data <- eval(mcall$data)
+        data <- eval.parent(mcall$data)
         subset <- eval(mcall$subset, data)
         if (!is.null(subset))
           data <- data[subset,]
@@ -557,8 +569,8 @@ update.sitar <- function (object, ..., evaluate = TRUE)
             newre <- matrix(
               0,
               nrow = sum(newid),
-              ncol = dim(ranef(object))[2],
-              dimnames = list(levels(id)[newid], dimnames(ranef(object))[[2]])
+              ncol = dim(ro)[2],
+              dimnames = list(levels(id)[newid], dimnames(ro)[[2]])
             )
             start.$random <- rbind(start.$random, newre)
             cat(sum(newid), 'subjects added\n')
@@ -566,14 +578,14 @@ update.sitar <- function (object, ..., evaluate = TRUE)
         }
       }
       #	update fixed effects
-      if (length(fixef(object)) > df + 1)
-        fixed.extra <- (df + 2):length(fixef(object))
+      if (length(fo) > df + 1)
+        fixed.extra <- names(fo)[(df + 2):length(fo)]
       else
         fixed.extra <- NULL
       # new arg xoffset
       if (!is.null(extras$xoffset)) {
         xoffset.t <- xoffset
-        xoffset <- eval(extras$xoffset)
+        xoffset <- eval.parent(extras$xoffset)
         xoffset.t <- xoffset - xoffset.t
         x <- x - xoffset.t
         knots <- knots - xoffset.t
@@ -581,47 +593,55 @@ update.sitar <- function (object, ..., evaluate = TRUE)
       }
       # new arg knots
       if (!is.null(extras$knots)) {
-        knots <- eval(extras$knots) - xoffset
+        knots <- eval.parent(extras$knots) - xoffset
         df <- length(knots) + 1
          mcall$df <- NULL
      }
       # new arg df
       else if (!is.null(extras$df)) {
-        df <- eval(extras$df)
+        df <- eval.parent(extras$df)
         mcall$knots <- NULL
+        knots <- quantile(x, 1:(df - 1) / df)
       }
       # new arg bounds
       if (!is.null(extras$bounds)) {
-        bounds <- eval(extras$bounds)
+        bounds <- eval.parent(extras$bounds)
         if (length(bounds) == 1)
           bounds <- range(x) + abs(bounds) * c(-1, 1) * diff(range(x))
         else
           bounds <- bounds - xoffset
       }
-      if (df > 1 && object$ns$rank > 2) { # omit start if df was/is [01]
-        knots <- quantile(x, (1:(df - 1)) / df)
-        #	get spline start values
-        spline.lm <-
-          lm(predict(object, data, level = 0) ~ ns(x, knots = knots, Bound = bounds))
-        start.$fixed <-
-          c(coef(spline.lm)[c(2:(df + 1), 1)], start.$fixed[fixed.extra])
-        # new arg bstart
-        if (!is.null(extras$bstart) && !is.null(start.$fixed['b'])) {
-          bstart <- eval(extras$bstart)
-          if (bstart == 'mean')
-            bstart <- mean(x)
-          else
-            bstart <- bstart - xoffset
-          start.$fixed['b'] <- bstart
-        }
-        #	save start. object
-        assign('start.', start., parent.frame())
-        mcall[['start']] <- quote(start.)
+      #	get spline start values
+      spline.lm <-
+        lm(predict(object, data, level = 0) ~ ns(x, knots = knots, Bound = bounds))
+      start.$fixed <-
+        c(coef(spline.lm)[c(2:(df + 1), 1)],
+          fo[names(fo) %in% fixed.extra])
+      # new arg bstart
+      if (!is.null(extras$bstart) && !is.null(start.$fixed['b'])) {
+        bstart <- eval.parent(extras$bstart)
+        if (bstart == 'mean')
+          bstart <- mean(x)
+        else
+          bstart <- bstart - xoffset
+        start.$fixed['b'] <- bstart
       }
     }
+    #	save start. object
+    assign('start.', start., parent.frame())
+    mcall$start <- quote(start.)
   }
-  if (evaluate)
-    eval(mcall, parent.frame())
+  if (evaluate) {
+    # if data stored in object and either unchanging or original unavailable
+    # put a copy in globalenv
+    if (!is.null(object$data) &&
+        (!'data' %in% names(extras) ||
+         !all(vapply(all.vars(mcall$data), exists, TRUE)))) {
+      assign('.data.', object$data, parent.frame())
+      mcall$data <- quote(.data.)
+    }
+    eval.parent(mcall)
+  }
   else
     mcall
 }

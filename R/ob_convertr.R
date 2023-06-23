@@ -98,16 +98,15 @@
 #' @references
 #' Cole TJ, Lobstein T. Exploring an algorithm to harmonize International Obesity
 #' Task Force and World Health Organization child overweight and obesity prevalence
-#' rates. Pediatr Obes 2022;In press.
+#' rates. Pediatr Obes 2022;17:e12905. Available at \doi{10.1111/ijpo.12905}
 #'
 #' Cole TJ, Lobstein T. An improved algorithm to harmonize child overweight and
-#' obesity prevalence rates. Pediatr Obes 2023;In press.
+#' obesity prevalence rates. Pediatr Obes 2023;18:e12970. Available at \doi{10.1111/ijpo.12970}
 #'
 #' The CDC reference for children aged 2-20 years is: Must A, Dallal GE, Dietz
 #' WH. Reference data for obesity: 85th and 95th percentiles of body mass index
 #' (wt/ht2) and triceps skinfold thickness. American Journal of Clinical
-#' Nutrition 1991; 53: 839-46. Available at:
-#' \url{https://academic.oup.com/ajcn/article/53/4/839/4715058}
+#' Nutrition 1991; 53: 839-46.
 #'
 #' The IOTF reference for children aged 2-18 years is: Cole TJ, Bellizzi MC,
 #' Flegal KM, Dietz WH. Establishing a standard definition for child overweight
@@ -123,8 +122,7 @@
 #' The WHO reference for children aged 5-19 years is: de Onis M, Onyango AW,
 #' Borghi E, Siyam A, Nishida C, Siekmann J. Development of a WHO growth
 #' reference for school-aged children and adolescents. Bulletin of the World
-#' Health Organization 2007; 85: 660-7. Available at:
-#' \url{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2636412/pdf/07-043497.pdf/}
+#' Health Organization 2007; 85: 660-7.
 #' @examples
 #' ## convert 10% IOTF overweight prevalence (cutoff IOTF 25, including obesity)
 #' ## in 8-year-old boys to overweight prevalence for cutoff WHO +1
@@ -228,7 +226,7 @@ ob_convertr <- function(age, sex, from, to, pfrom = NA, pto = NA, data = parent.
     if (with(data, min(pfrom * (100 - pfrom), na.rm = TRUE) <= 0)) {
       warning('prevalences <= 0 or >= 100 set missing')
       data <- data %>%
-        mutate(pfrom = if_else(pfrom * (100 - pfrom) <= 0, as.numeric(NA), pfrom))
+        mutate(pfrom = if_else(pfrom * (100 - pfrom) <= 0, NA_real_, pfrom))
     }
     if (length(na.omit(data$pfrom)) > 0)
       if(max(data$pfrom, na.rm = TRUE) <= 1)
@@ -238,7 +236,7 @@ ob_convertr <- function(age, sex, from, to, pfrom = NA, pto = NA, data = parent.
   # create meanz and dz and epto
   data <- data %>%
     mutate(age = round(age * 2) / 2,
-           age = if_else(age < 2 | age > 18, as.numeric(NA), age),
+           age = if_else(age < 2 | age > 18, NA_real_, age),
            n = 1:n()) %>%
            select(.data$age, .data$n, everything()) %>%
     pivot_longer(c(from, to), values_to = 'cutoff', names_to = NULL) %>%
@@ -303,7 +301,7 @@ ob_convertr <- function(age, sex, from, to, pfrom = NA, pto = NA, data = parent.
          },
          # comparison plot plus data in wider format
          compare = {
-           stopifnot('compare plot needs pto set' = !any(is.na(data$pto)))
+           stopifnot('compare plot needs pto set' = !anyNA(data$pto))
            data <- data %>%
              select(.data$age, .data$sex, .data$pfrom, .data$pto, .data$epto)
            plot <- ggplot(data, aes(.data$pto, .data$epto, shape = .data$sex)) +
@@ -330,7 +328,7 @@ ob_convertr2 <- function(age, sex, from, to, pfrom = NA, pto = NA,
   wic <- function(x) {
     if (length(x) > 1)
       return(x)
-    x <- match.arg(x, c("WHO", "IOTF", "CDC"))
+    x <- match.arg(toupper(x), c("WHO", "IOTF", "CDC"))
     switch(x,
            WHO = c('WHO +1', 'WHO +2'),
            IOTF = c('IOTF 25', 'IOTF 30'),
@@ -344,11 +342,11 @@ ob_convertr2 <- function(age, sex, from, to, pfrom = NA, pto = NA,
   co2ref <- function(x) map_chr(strsplit(x, ' '), ~.x[1])
 
   stopifnot('`age` or `sex` missing' = !missing(age) && !missing(sex))
-  if (any(is.na(pfrom))) {
+  if (anyNA(pfrom)) {
     stopifnot('`pfrom` not found' = match.arg(plot) == 'density')
-    pfrom <- setNames(2:1*30, wic(from)) # distinct dummy values
+    pfrom <- setNames(rep(NA_real_, length(wic(from))), wic(from))
   }
-  if (any(is.na(pto)))
+  if (anyNA(pto))
     pto <- character()
   if (identical(data, parent.frame())) {
     if (is.null(names(pfrom)))
@@ -369,7 +367,7 @@ ob_convertr2 <- function(age, sex, from, to, pfrom = NA, pto = NA,
   # check for equal pfrom values
   data <- data %>%
     mutate(across(pfrom[2], ~if_else(get(pfrom[2]) == get(pfrom[1]),
-                                 as.numeric(NA), .x)))
+                                     NA_real_, .x)))
 
   stopifnot('`from` and `to` should both be either character or numeric' =
               identical(mode(from), mode(to)) && (is.character(to) || is.numeric(to)))
@@ -377,19 +375,19 @@ ob_convertr2 <- function(age, sex, from, to, pfrom = NA, pto = NA,
   # set up from, to, pto and epto
   pto_na <- length(pto) == 0L
   if (is.character(from)) {
-    from <- wic(toupper(from))
-    to <- wic(toupper(to))
+    from <- wic(from)
+    to <- wic(to)
     stopifnot('`from` should be length 2 or more' = length(from) > 1L,
               '`to` should be length 2 or more' = length(to) > 1L)
     if (pto_na) {
       pto = paste(to, 'to')
-      data[, pto] <- t(50 + seq_along(to))
+      data[, pto] <- NA_real_
     }
     epto <- paste(to, 'pred')
   } else {
     if (pto_na) {
       pto = paste0('z', sprintf('%.2g', to), '_to')
-      data[, pto] <- t(50 + seq_along(to))
+      data[, pto] <- NA_real_
     }
     epto <- paste0('z', sprintf('%.2g', to), '_pred')
   }
@@ -428,7 +426,10 @@ ob_convertr2 <- function(age, sex, from, to, pfrom = NA, pto = NA,
              x = list(c_across(c(starts_with(c('zfrom', 'zto'))))),
              y = list(c_across(all_of(c(pfrom, pto)))),
              y = list(if_else(.data$y * (100 - .data$y) > 0, .data$y,
-                              as.numeric(NA))), # out of range prevalences NA
+                              NA_real_)), # out of range prevalences NA
+             from_y = anyNA(.data$y),
+             y = list(if_else(is.na(.data$y), as.numeric(seq_along(.data$y)), .data$y)),
+             pfrom_na = anyNA(c_across(pfrom)),
              models = list(lm(to_z(.data$y) ~ x, weights = weights)),
              b = coef(.data$models)[2],
              models_all = list(lm(to_z(.data$y) ~ x)),
@@ -436,8 +437,11 @@ ob_convertr2 <- function(age, sex, from, to, pfrom = NA, pto = NA,
              r = cor(.data$models_all$model)[1, 2]) %>%
       bind_cols(map_dfr(.$models, ~{to_p(fitted(.x))[!weights]}) %>%
                   rename_with(~all_of(epto))) %>%
+      mutate(across(c(all_of(epto), 'b'),
+                    ~if_else(.data$pfrom_na, NA_real_, .x))) %>%
+      mutate(across(c('b_all', 'r'),
+                    ~if_else(.data$from_y, NA_real_, .x))) %>%
       select(-matches(c('from.', 'to.'))) %>%
-      mutate(across(all_of(epto), ~if_else(is.na(.data$b), as.numeric(NA), .x))) %>%
       ungroup
   }
   if (pto_na)
@@ -459,6 +463,7 @@ ob_convertr2 <- function(age, sex, from, to, pfrom = NA, pto = NA,
          },
          # density plot plus data in longer format
          density = {
+           stopifnot('density plot needs from as characters' = is.character(from))
            data <- data %>%
              select(1:2, .data$z) %>%
              unnest(.data$z) %>%
