@@ -1,3 +1,37 @@
+Changes in Version 1.5.0
+
+  o Now depends on R >= 4.1.0.
+
+  o update.sitar has been streamlined and should now be faster.
+
+  o plot.sitar now handles par() parameters for combined distance-velocity plots
+    differently - a breaking change. Instead of entries for the y2 axis being
+    collected in parameter 'y2par', the entries for both y1 and y2 axes are now
+    combined - see examples.
+
+  o Other breaking changes in plot.sitar - the argument 'design' has been
+    removed, and the first three tibble column names returned from the helper
+    functions 'plot_d' etc are now the names of x, y and id from the original
+    sitar call.
+
+  o A new function getDV returns peak velocity and age at peak velocity for
+    individuals, including those with a truncated growth curve - see the example.
+
+  o predict.sitar now calculates velocity by differentiating each point (as dy/dx)
+    rather than differentiating the mean spline curve. This means it handles
+    velocities at a single age, and can return predicted distance and velocity
+    for both levels 0 and 1.
+
+  o In addition the arguments xfun and yfun in predict.sitar have been removed -
+    a breaking change.
+
+  o The d random effect now has an alternative parameterisation, controlled by
+    the sitar argument d.adjusted. The age slope d is the regression coefficient
+    of y on x, and when d.adjusted = TRUE x is first adjusted for random
+    effects b and c, reflecting individual developmental age rather than
+    chronological age. The default d.adjusted = FALSE appears on limited testing
+    to fit better.
+
 Changes in Version 1.4.0
 
   o plot.sitar plots multiple curves for options 'd' and 'v' when the model

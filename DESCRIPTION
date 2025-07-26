@@ -2,7 +2,7 @@ Type: Package
 Package: sitar
 Title: Super Imposition by Translation and Rotation Growth Curve
         Analysis
-Version: 1.4.0
+Version: 1.5.0
 Authors@R: 
     person(given = "Tim",
            family = "Cole",
@@ -19,17 +19,19 @@ Description: Functions for fitting and plotting SITAR (Super
     et al (2010) <doi:10.1093/ije/dyq115>.
 License: GPL (>= 2)
 URL: https://github.com/statist7/sitar
-Depends: nlme, R (>= 3.0.0)
-Imports: dplyr, forcats, ggplot2, glue, purrr, rlang, rsample, stats,
-        tibble, tidyr, magrittr
+Depends: nlme, R (>= 4.1.0)
+Imports: dplyr, forcats, ggplot2, glue, graphics, magrittr, methods,
+        purrr, rlang, rsample, splines, splines2, stats, tibble, tidyr
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 Encoding: UTF-8
 LazyData: yes
 LazyLoad: yes
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
+BugReports: https://github.com/statist7/sitar/issues
 NeedsCompilation: no
-Packaged: 2023-06-23 15:25:33 UTC; timcole
-Author: Tim Cole [cre, aut, cph] (<https://orcid.org/0000-0001-5711-8200>)
+Packaged: 2025-07-26 21:45:04 UTC; timcole
+Author: Tim Cole [cre, aut, cph] (ORCID:
+    <https://orcid.org/0000-0001-5711-8200>)
 Repository: CRAN
-Date/Publication: 2023-06-23 15:50:02 UTC
+Date/Publication: 2025-07-26 22:20:02 UTC

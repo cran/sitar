@@ -19,6 +19,8 @@ sitar(
   b.formula = ~1,
   c.formula = ~1,
   d.formula = ~1,
+  d.adjusted = FALSE,
+  stype = c("nsk", "ns"),
   bounds = 0.04,
   start,
   xoffset = "mean",
@@ -43,10 +45,10 @@ sitar(
 
 \item{id}{factor of subject identifiers.}
 
-\item{data}{data frame containing variables \code{x}, \code{y} and
-\code{id}.}
+\item{data}{data frame containing variables \code{x}, \code{y} and \code{id}.}
 
-\item{df}{degrees of freedom for cubic regression spline (0 or more, see Details).}
+\item{df}{degrees of freedom for cubic regression spline (0 or more, see
+Details).}
 
 \item{knots}{vector of values for knots (default \code{df} quantiles of
 \code{x} distribution).}
@@ -55,11 +57,11 @@ sitar(
 \code{random} or the subset of "a + b + c + d" within \code{random}).}
 
 \item{random}{character string specifying a, b, c, d random effects (default
-\code{"a+b+c"}). Alternatively \code{nlme} formula e.g.
-\code{"list(id = pdDiag(a + b + c ~ 1))"}.}
+\code{"a+b+c"}). Alternatively \code{nlme} formula e.g. \code{"list(id =
+pdDiag(a + b + c ~ 1))"}.}
 
-\item{pdDiag}{logical which if TRUE fits a diagonal random effects
-covariance matrix, or if FALSE (default) a general covariance matrix.}
+\item{pdDiag}{logical which if TRUE fits a diagonal random effects covariance
+matrix, or if FALSE (default) a general covariance matrix.}
 
 \item{a.formula}{formula for fixed effect a (default \code{~ 1}).}
 
@@ -69,12 +71,18 @@ covariance matrix, or if FALSE (default) a general covariance matrix.}
 
 \item{d.formula}{formula for fixed effect d (default \code{~ 1}).}
 
-\item{bounds}{span of \code{x} for regression spline, or fractional
-extension of range (default 0.04).}
+\item{d.adjusted}{logical defining x scale for random effect d (default FALSE
+means x unadjusted, TRUE means x adjusted with random effects b and c).}
+
+\item{stype}{version of natural spline curve to be fitted, default
+\code{"nsk"} or \code{"ns"}. See Details.}
+
+\item{bounds}{span of \code{x} for regression spline, or fractional extension
+of range (default 0.04).}
 
 \item{start}{optional numeric vector of initial estimates for the fixed
 effects, or list of initial estimates for the fixed and random effects (see
-\code{\link{nlme}}).}
+\code{\link[nlme]{nlme}}).}
 
 \item{xoffset}{optional value of offset for \code{x} (either "mean"
 (default), "apv" or value).}
@@ -83,31 +91,30 @@ effects, or list of initial estimates for the fixed and random effects (see
 "mean", "apv" or value (default \code{xoffset})).}
 
 \item{returndata}{logical which if TRUE causes the model matrix to be
-returned, or if FALSE (default) the fitted model. Setting returndata TRUE is
-useful in conjunction with \code{subset} and \code{\link{subsample}} for
+returned, or if FALSE (default) the fitted model. Setting returndata TRUE
+is useful in conjunction with \code{\link{subset}} and \code{\link{subsample}} for
 simulation purposes.}
 
 \item{verbose}{optional logical value to print information on the evolution
-of the iterative algorithm (see \code{\link{nlme}}).}
+of the iterative algorithm (see \code{\link[nlme]{nlme}}).}
 
 \item{correlation}{optional \code{corStruct} object describing the
-within-group correlation structure (see \code{\link{nlme}}).}
+within-group correlation structure (see \code{\link[nlme]{nlme}}).}
 
-\item{weights}{optional \code{varFunc} object or one-sided formula
-describing the within-group heteroscedasticity structure (see
-\code{\link{nlme}}).}
+\item{weights}{optional \code{varFunc} object or one-sided formula describing
+the within-group heteroscedasticity structure (see \code{\link[nlme]{nlme}}).}
 
 \item{subset}{optional expression indicating the subset of the rows of data
-that should be used in the fit (see \code{\link{nlme}}).}
+that should be used in the fit (see \code{\link[nlme]{nlme}}).}
 
 \item{method}{character string, either "REML" or "ML" (default) (see
-\code{\link{nlme}}).}
+\code{\link[nlme]{nlme}}).}
 
 \item{na.action}{function for when the data contain NAs (see
-\code{\link{nlme}}).}
+\code{\link[nlme]{nlme}}).}
 
 \item{control}{list of control values for the estimation algorithm (see
-\code{\link{nlme}}) (default {nlmeControl(returnObject = TRUE)}).}
+\code{\link[nlme]{nlme}}) (default \code{nlmeControl(returnObject = TRUE)}).}
 
 \item{keep.data}{logical to control saving \code{data} as part of the model
 object (default TRUE).}
@@ -117,29 +124,32 @@ object (default TRUE).}
 \item{\dots}{further parameters for \code{update} consisting of any of the
 above \code{sitar} parameters.}
 
-\item{evaluate}{logical to control evaluation.  If TRUE (default) the
+\item{evaluate}{logical to control evaluation. If TRUE (default) the
 expanded \code{update} call is passed to \code{sitar} for evaluation, while
 if FALSE the expanded call itself is returned.}
 }
 \value{
 An object inheriting from class \code{sitar} representing the
-nonlinear mixed-effects model fit, with all the components returned by
-\code{nlme} (see \code{\link{nlmeObject}} for a full description) plus the
-following components:
-\item{fitnlme}{the function returning the predicted value of \code{y}.}
-\item{data}{copy of \code{data} (if \code{keep.data} true).}
+  nonlinear mixed-effects model fit, with all the components returned by
+  \code{nlme} (see \code{\link[nlme]{nlmeObject}} for a full description) plus the
+  following components: \item{fitnlme}{the function returning the predicted
+  value of \code{y}.} \item{data}{copy of \code{data} (if \code{keep.data}
+  true).}
 \item{constants}{data frame of mean a-b-c-d values for unique combinations
-of covariates (excluding \code{x}).}
-\item{call.sitar}{the internal \code{sitar} call that produced the object.}
-\item{xoffset}{the value of \code{xoffset}.}
-\item{ns}{the \code{lm} object providing starting values for the B-spline curve.}
+  of covariates (excluding \code{x}).}
+  \item{call.sitar}{the internal \code{sitar} call that produced the object.}
+  \item{xoffset}{the value of \code{xoffset}.}
+\item{ns}{the \code{lm} object providing starting values for the B-spline
+ curve.}
 
-Generic functions such as \code{print}, \code{plot}, \code{anova} and
-\code{summary} have methods to show the results of the fit. The functions
-\code{residuals}, \code{coef}, \code{fitted}, \code{fixed.effects},
-\code{random.effects}, \code{predict}, \code{getData}, \code{getGroups},
-\code{getCovariate} and \code{getVarCov} can be used to extract some of its
-components.
+  In addition attributes \code{stype} and \code{knots} are set.
+
+  Generic functions such as \code{print}, \code{plot}, \code{anova} and
+  \code{summary} have methods to show the results of the fit. The functions
+  \code{residuals}, \code{coef}, \code{fitted}, \code{fixed.effects},
+  \code{random.effects}, \code{predict}, \code{getData}, \code{getGroups},
+  \code{getCovariate} and \code{getVarCov} can be used to extract some of its
+  components.
 }
 \description{
 SITAR is a method of growth curve analysis, based on \pkg{nlme}, that
@@ -149,13 +159,13 @@ defining how individual growth curves differ from the mean curve.
 }
 \details{
 The SITAR model usually has up to three random effects (a, b and c), termed
-size, timing and intensity respectively. \code{df} sets the degrees of freedom
-for the mean spline curve, taking values from 1 (i.e. linear) upwards. In
-addition there is a random effect for the slope, d, which is fitted when
-\code{df = 0}, and combined with a, it provides the classic random intercept random
-slope model, which is similar to the 1 df spline model. In addition d can be
-fitted, along with a, b and c, to extend
-SITAR to model variability in the adult slope of the growth curve.
+size, timing and intensity respectively. \code{df} sets the degrees of
+freedom for the mean spline curve, taking values from 1 (i.e. linear)
+upwards. In addition there is a random effect for the slope, d, which is
+fitted when \code{df = 0}, and combined with a, it provides the classic
+random intercept random slope model, which is similar to the 1 df spline
+model. In addition d can be fitted, along with a, b and c, to extend SITAR to
+model variability in the adult slope of the growth curve.
 
 \code{xoffset} allows the origin of \code{x} to be varied, while
 \code{bstart} specifies the starting value for \code{b}, both of which can
@@ -163,16 +173,25 @@ affect the model fit and particularly \code{b}. The values of \code{bstart},
 \code{knots} and \code{bounds} are offset by \code{xoffset} for fitting
 purposes, and similarly for fixed effect \code{b}.
 
-The formulae \code{a.formula}, \code{b.formula}, \code{c.formula} and \code{d.formula}
-allow for cov.names and
-can include functions and interactions. \code{\link{make.names}} is used to
-ensure that the names of the corresponding model terms are valid. The
-modified not the original names need to be specified in \code{predict.sitar}.
+The formulae \code{a.formula}, \code{b.formula}, \code{c.formula} and
+\code{d.formula} allow for cov.names and can include functions and
+interactions. \code{\link{make.names}} is used to ensure that the names of
+the corresponding model terms are valid. The modified names, not the original
+names, need to be specified in \code{predict.sitar}.
 
 \code{update} updates the model by taking the \code{object} call, adding any
 new parameters and replacing changed ones. Where feasible the fixed and
 random effects of the model being updated are suitably modified and passed
 via the \code{start} argument.
+
+The mean curve is a natural cubic spline, fitted originally with
+\code{splines::ns} but now by default with \code{splines2::nsk}, where the
+choice is set by \code{stype}. Both give the same mean curve, but \code{nsk}
+is faster than \code{ns} and its fixed effect coefficients have a direct
+interpretation: added to fixed effect \code{a} they give the values of the
+mean curve at the \code{df} right-most knots, while \code{a} is the value at
+the left-most knot. The knots themselves depend on fixed effects \code{b} and
+\code{c} (where fitted) and are accessed via \code{attr(object, "knots")}.
 }
 \examples{
 

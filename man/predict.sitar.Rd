@@ -10,9 +10,7 @@
   level = 1L,
   ...,
   deriv = 0L,
-  abc = NULL,
-  xfun = identity,
-  yfun = identity
+  abc = NULL
 )
 }
 \arguments{
@@ -20,9 +18,9 @@
 
 \item{newdata}{an optional data frame to be used for obtaining the
 predictions, defaulting to the data used to fit \code{object}.
-It requires named columns for \code{x}, and for \code{id} if
+It requires named columns for \code{x}, and also for \code{id} if
 \code{level = 1}, matching the names in \code{object}. Variables with the
-reserved names \code{x=.x} or \code{id=.id} take precedence over the model
+reserved names \code{x = .x} or \code{id = .id} take precedence over the model
 \code{x} and \code{id} variables. Any covariates in
 \code{a.formula}, \code{b.formula}, \code{c.formula} or \code{d.formula} can also be included.
 By default their values are set to the mean, so when \code{level = 0} the
@@ -36,58 +34,55 @@ predictions. Defaults to level 1, and \code{level = 0:1} fits both levels.}
 \code{naPattern}.}
 
 \item{deriv}{an optional integer specifying predictions corresponding to
-either the fitted curve or its derivative. \code{deriv = 0} (default)
+the fitted curve and/or its derivative. \code{deriv = 0} (default)
 specifies the distance curve, \code{deriv = 1} the velocity curve and
-\code{deriv = 2} the acceleration curve.}
+\code{deriv = 0:1} fits both.}
 
 \item{abc}{an optional named vector containing values of a subset of
 \code{a}, \code{b}, \code{c} and \code{d}, default \code{NULL}. Ignored if
 \code{level = 0}. It gives predictions for a single subject with the
 specified values of \code{a}, \code{b}, \code{c} and \code{d}, where missing values
 are set to 0. Alternatively \code{abc} can contain the value for a single id.}
-
-\item{xfun}{an optional function to apply to \code{x} to convert it back to
-the original scale, e.g. if x = log(age) then xfun = exp. Only relevant if
-\code{deriv > 0} - see Details.}
-
-\item{yfun}{an optional function to apply to \code{y} to convert it back to
-the original scale, e.g. if y = sqrt(height) then yfun = function(z) z^2.}
 }
 \value{
 A vector of the predictions, or a list of vectors if \code{asList =
-TRUE} and \code{level == 1}, or a data frame if \code{length(level) > 1}.
+TRUE} and \code{level == 1}, or a data frame if \code{length(level) * length(deriv) > 1}.
+The data frame column names are (a subset of): \code{(id, predict.fixed,
+predict.id, vel.predict.fixed, vel.predict.id)}.
 }
 \description{
 Predict method for \code{sitar} objects, based on \code{predict.lme}.
 }
 \details{
-When \code{deriv = 1} the returned velocity is in units of \code{yfun(y)}
-per \code{xfun(x)}. So if \code{x} and/or \code{y} are transformed, velocity
-in units of \code{y} per \code{x} can be obtained by specifying \code{xfun}
-and/or \code{yfun} to back-transform them appropriately.
+If \code{x} and/or \code{y} include transformations, e.g. \code{x = log(age)},
+predictions are returned in the original units by back-transforming \code{x}
+and/or \code{y} appropriately using the function \code{ifun}.
 }
 \examples{
 
 data(heights)
+require(dplyr)
+require(tidyr)
+require(ggplot2)
 ## fit model
-m1 <- sitar(x=age, y=height, id=id, data=heights, df=5)
+m1 <- sitar(x = age, y = height, id = id, data = heights, df = 5)
+df <- data.frame(age = 9:16, id = 5)
 
-## predictions at level 0
-predict(m1, newdata=data.frame(age=9:16), level=0)
+## height predictions at level 0
+predict(m1, newdata = df, level = 0)
 
-## predictions at level 1 for subject 5
-predict(m1, newdata=data.frame(age=9:16, id=5), level=1)
+## height predictions at level 1 for subject 5
+predict(m1, newdata = df, level = 1)
 
-## velocity predictions for subjects with early and late puberty
-vel1 <- predict(m1, deriv=1, abc=c(b=-1))
-mplot(age, vel1, id, heights, col=id)
-vel1 <- predict(m1, deriv=1, abc=c(b=1))
-mplot(age, vel1, id, heights, col=id, add=TRUE)
-
-}
-\seealso{
-\code{\link{ifun}} for a way to generate the functions \code{xfun}
-and \code{yfun} automatically from the \code{sitar} model call.
+## velocity predictions for subjects with early, average and late puberty
+m2 <- sitar(x = log(age), y = height, id = id, data = heights, df = 5)
+tibble(age = 80:160/10) \%>\%
+  mutate(early = predict(m2, ., deriv = 1, abc = c(b = -0.07)),
+         average = predict(m2, ., deriv = 1, level = 0),
+         late = predict(m2, ., deriv = 1, abc = c(b = 0.07))) \%>\%
+  pivot_longer(early:late, names_to = 'group', values_to = 'height_velocity') \%>\%
+  ggplot(aes(age, height_velocity, group = group, colour = group)) +
+  geom_path(show.legend = FALSE)
 }
 \author{
 Tim Cole \email{tim.cole@ucl.ac.uk}
